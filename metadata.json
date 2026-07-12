@@ -1,0 +1,6 @@
+{
+  "name": "Welcare Trip - Travel & Medical ERP",
+  "description": "An innovative travel and medical tourism ERP platform with full-featured billing for air tickets, hospital appointments, packaged tours, real-time dynamic IATA BSP reports, and an AI Travel & Medical Consultant powered by Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
