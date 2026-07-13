@@ -2,12 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Briefcase, Sparkles, Save, User, Hotel, Plane, Ship, ShieldCheck, HeartPulse } from 'lucide-react';
 import { Invoice } from '../types';
 
-interface TourPackageInvoiceProps {
-  onAddInvoice: (inv: Partial<Invoice>) => Promise<boolean>;
-  onNavigateToTab: (tab: string) => void;
-}
 
-export default function TourPackageInvoice({ onAddInvoice, onNavigateToTab }: TourPackageInvoiceProps) {
+
+export default function TourPackageInvoice() {
   const [loading, setLoading] = useState(false);
   const [aiFilling, setAiFilling] = useState(false);
   const [subFormTab, setSubFormTab] = useState<'passport' | 'ticket' | 'accommodation' | 'visa' | 'medical' | 'billing'>('passport');
@@ -190,36 +187,36 @@ export default function TourPackageInvoice({ onAddInvoice, onNavigateToTab }: To
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setLoading(true);
 
-    const success = await onAddInvoice({
-      invoiceNo,
-      clientName,
-      salesBy,
-      salesDate,
-      dueDate,
-      type: 'Tour Package',
-      status: 'Paid',
-      passportInfo: { passportNo, paxName, paxType, nationalId, contactNo, email, dob, dateOfIssue: doi, dateOfExpiry: doe },
-      ticketInfo: { ticketNo: tktNo, pnr: tktPnr, route: tktRoute, journeyDate: tktJourneyDate, returnDate: tktReturnDate, airline: tktAirline, salePrice: tktSalePrice, costPrice: tktCostPrice, profit: flightProfit, vendor: tktVendor },
-      accommodation: { hotelName, hotelLocation, roomType, checkIn, checkOut, nights, salePrice: hotelSalePrice, costPrice: hotelCostPrice, profit: hotelProfit, vendor: hotelVendor },
-      visaInfo: { visaCategory, country: visaCountry, visaType, visaNo, salePrice: visaSalePrice, costPrice: visaCostPrice, profit: visaProfit },
-      medicalInfo: { hospitalName, doctorName, appointmentDate, treatmentCategory, companionName, ambulanceRequired, treatmentCost: medicalCostPrice, salePrice: medicalSalePrice, costPrice: medicalCostPrice, profit: medicalProfit },
-      billing: { unitPrice: subTotal / billingQty, costPrice: totalCost / billingQty, billingQty, discount, extraFee, totalCost, totalProfit, subTotal, netTotal, agentCommission },
-      profit: totalProfit,
-      clientPrice: netTotal,
-      purchasePrice: totalCost,
-      route: tktRoute || 'Packaged Medical Tour',
-      paxName: paxName || 'Haji Mohammad Selim'
-    });
+  //   const success = await onAddInvoice({
+  //     invoiceNo,
+  //     clientName,
+  //     salesBy,
+  //     salesDate,
+  //     dueDate,
+  //     type: 'Tour Package',
+  //     status: 'Paid',
+  //     passportInfo: { passportNo, paxName, paxType, nationalId, contactNo, email, dob, dateOfIssue: doi, dateOfExpiry: doe },
+  //     ticketInfo: { ticketNo: tktNo, pnr: tktPnr, route: tktRoute, journeyDate: tktJourneyDate, returnDate: tktReturnDate, airline: tktAirline, salePrice: tktSalePrice, costPrice: tktCostPrice, profit: flightProfit, vendor: tktVendor },
+  //     accommodation: { hotelName, hotelLocation, roomType, checkIn, checkOut, nights, salePrice: hotelSalePrice, costPrice: hotelCostPrice, profit: hotelProfit, vendor: hotelVendor },
+  //     visaInfo: { visaCategory, country: visaCountry, visaType, visaNo, salePrice: visaSalePrice, costPrice: visaCostPrice, profit: visaProfit },
+  //     medicalInfo: { hospitalName, doctorName, appointmentDate, treatmentCategory, companionName, ambulanceRequired, treatmentCost: medicalCostPrice, salePrice: medicalSalePrice, costPrice: medicalCostPrice, profit: medicalProfit },
+  //     billing: { unitPrice: subTotal / billingQty, costPrice: totalCost / billingQty, billingQty, discount, extraFee, totalCost, totalProfit, subTotal, netTotal, agentCommission },
+  //     profit: totalProfit,
+  //     clientPrice: netTotal,
+  //     purchasePrice: totalCost,
+  //     route: tktRoute || 'Packaged Medical Tour',
+  //     paxName: paxName || 'Haji Mohammad Selim'
+  //   });
 
-    setLoading(false);
-    if (success) {
-      onNavigateToTab('ledger');
-    }
-  };
+  //   setLoading(false);
+  //   if (success) {
+  //     onNavigateToTab('ledger');
+  //   }
+  // };
 
   return (
     <div id="tour-package-container" className="flex-1 p-8 bg-slate-50 overflow-y-auto space-y-6">
@@ -244,7 +241,9 @@ export default function TourPackageInvoice({ onAddInvoice, onNavigateToTab }: To
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form 
+      // onSubmit={handleSubmit} 
+      className="space-y-6">
         
         {/* Core Metadata */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/60 grid grid-cols-1 md:grid-cols-5 gap-4 text-xs">
@@ -541,7 +540,9 @@ export default function TourPackageInvoice({ onAddInvoice, onNavigateToTab }: To
 
         {/* Form Actions */}
         <div className="flex items-center justify-end gap-3 pb-8">
-          <button type="button" onClick={() => onNavigateToTab('dashboard')} className="px-6 py-2.5 border border-slate-200 bg-white text-slate-600 rounded-xl text-xs font-bold cursor-pointer transition-all hover:bg-slate-50">
+          <button type="button" 
+          // onClick={() => onNavigateToTab('dashboard')} 
+          className="px-6 py-2.5 border border-slate-200 bg-white text-slate-600 rounded-xl text-xs font-bold cursor-pointer transition-all hover:bg-slate-50">
             Cancel
           </button>
           <button type="submit" disabled={loading} className="flex items-center gap-1.5 px-8 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-lg shadow-emerald-500/20">

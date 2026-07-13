@@ -1129,7 +1129,7 @@ app.post('/api/ai/chat', async (req, res) => {
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.1-flash-lite',
       contents: message,
       config: {
         systemInstruction: systemInstruction

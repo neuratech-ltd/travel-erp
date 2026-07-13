@@ -12,115 +12,110 @@ import {
 } from 'lucide-react';
 import { Invoice, ReportStats } from '../types';
 
-interface DashboardOverviewProps {
-  stats: ReportStats | null;
-  invoices: Invoice[];
-  onNavigateToTab: (tab: string) => void;
-}
 
-export default function DashboardOverview({ stats, invoices, onNavigateToTab }: DashboardOverviewProps) {
+export default function DashboardOverview() {
   // Compute dynamic medical tourism metrics
-  const medicalHighlights = useMemo(() => {
-    let count = 0;
-    let sales = 0;
-    let profit = 0;
-    const appointments: Array<{ patient: string; hospital: string; doctor: string; treatment: string; date: string }> = [];
+  // const medicalHighlights = useMemo(() => {
+  //   let count = 0;
+  //   let sales = 0;
+  //   let profit = 0;
+  //   const appointments: Array<{ patient: string; hospital: string; doctor: string; treatment: string; date: string }> = [];
 
-    invoices.forEach((inv) => {
-      if (inv.medicalInfo && inv.medicalInfo.hospitalName) {
-        count++;
-        sales += inv.medicalInfo.salePrice || 0;
-        profit += inv.medicalInfo.profit || 0;
-        appointments.push({
-          patient: inv.paxName || 'Haji Mohammad Selim',
-          hospital: inv.medicalInfo.hospitalName,
-          doctor: inv.medicalInfo.doctorName || 'Assigned Consultant',
-          treatment: inv.medicalInfo.treatmentCategory || 'General Checkup',
-          date: inv.medicalInfo.appointmentDate || '2026-08-03'
-        });
-      } else if (inv.clientName && inv.clientName.toLowerCase().includes('medical')) {
-        count++;
-        sales += inv.clientPrice || 0;
-        profit += inv.profit || 0;
-        appointments.push({
-          patient: inv.paxName || 'Welcare Medical Patient',
-          hospital: 'Mount Elizabeth Hospital (Singapore)',
-          doctor: 'Cardiology Consultant',
-          treatment: 'Cardiac Checkup & Treatment',
-          date: '2026-07-20'
-        });
-      }
-    });
+  //   invoices.forEach((inv) => {
+  //     if (inv.medicalInfo && inv.medicalInfo.hospitalName) {
+  //       count++;
+  //       sales += inv.medicalInfo.salePrice || 0;
+  //       profit += inv.medicalInfo.profit || 0;
+  //       appointments.push({
+  //         patient: inv.paxName || 'Haji Mohammad Selim',
+  //         hospital: inv.medicalInfo.hospitalName,
+  //         doctor: inv.medicalInfo.doctorName || 'Assigned Consultant',
+  //         treatment: inv.medicalInfo.treatmentCategory || 'General Checkup',
+  //         date: inv.medicalInfo.appointmentDate || '2026-08-03'
+  //       });
+  //     } else if (inv.clientName && inv.clientName.toLowerCase().includes('medical')) {
+  //       count++;
+  //       sales += inv.clientPrice || 0;
+  //       profit += inv.profit || 0;
+  //       appointments.push({
+  //         patient: inv.paxName || 'Welcare Medical Patient',
+  //         hospital: 'Mount Elizabeth Hospital (Singapore)',
+  //         doctor: 'Cardiology Consultant',
+  //         treatment: 'Cardiac Checkup & Treatment',
+  //         date: '2026-07-20'
+  //       });
+  //     }
+  //   });
 
-    return {
-      count,
-      sales,
-      profit,
-      appointments
-    };
-  }, [invoices]);
+  //   return {
+  //     count,
+  //     sales,
+  //     profit,
+  //     appointments
+  //   };
+  // }, [invoices]);
 
   // Compute dynamic client-wise sales summary based on existing invoices
-  const clientWiseSummary = useMemo(() => {
-    const clients: Record<string, { purchase: number; sales: number; profit: number }> = {};
+  // const clientWiseSummary = useMemo(() => {
+  //   const clients: Record<string, { purchase: number; sales: number; profit: number }> = {};
     
-    invoices.forEach((inv) => {
-      const clientName = inv.clientName || 'Walk-In Customer';
-      const clientPrice = inv.clientPrice || (inv.billing?.netTotal) || 0;
-      const costPrice = inv.purchasePrice || (inv.billing?.totalCost) || 0;
-      const profit = inv.profit || (inv.billing?.totalProfit) || 0;
+  //   invoices.forEach((inv) => {
+  //     const clientName = inv.clientName || 'Walk-In Customer';
+  //     const clientPrice = inv.clientPrice || (inv.billing?.netTotal) || 0;
+  //     const costPrice = inv.purchasePrice || (inv.billing?.totalCost) || 0;
+  //     const profit = inv.profit || (inv.billing?.totalProfit) || 0;
 
-      if (!clients[clientName]) {
-        clients[clientName] = { purchase: 0, sales: 0, profit: 0 };
-      }
-      clients[clientName].purchase += costPrice;
-      clients[clientName].sales += clientPrice;
-      clients[clientName].profit += profit;
-    });
+  //     if (!clients[clientName]) {
+  //       clients[clientName] = { purchase: 0, sales: 0, profit: 0 };
+  //     }
+  //     clients[clientName].purchase += costPrice;
+  //     clients[clientName].sales += clientPrice;
+  //     clients[clientName].profit += profit;
+  //   });
 
-    return Object.entries(clients).map(([name, data]) => ({
-      name,
-      ...data
-    }));
-  }, [invoices]);
+  //   return Object.entries(clients).map(([name, data]) => ({
+  //     name,
+  //     ...data
+  //   }));
+  // }, [invoices]);
 
   // Compute stats if not ready from backend
-  const displayStats = useMemo(() => {
-    if (stats) return stats;
+  // const displayStats = useMemo(() => {
+  //   if (stats) return stats;
 
-    // Fallback/Default values if API hasn't resolved
-    return {
-      daily: { sales: 20500, collections: 12000, discount: 200, purchased: 15800, serviceCharge: 100, payment: 12000, profit: 4700 },
-      monthly: { sales: 36500, collections: 30500, discount: 400, purchased: 30800, serviceCharge: 100, payment: 30500, profit: 7000 },
-      yearly: { sales: 36500, collections: 30500, discount: 400, purchased: 30800, serviceCharge: 100, payment: 30500, profit: 7000 }
-    };
-  }, [stats]);
+  //   // Fallback/Default values if API hasn't resolved
+  //   return {
+  //     daily: { sales: 20500, collections: 12000, discount: 200, purchased: 15800, serviceCharge: 100, payment: 12000, profit: 4700 },
+  //     monthly: { sales: 36500, collections: 30500, discount: 400, purchased: 30800, serviceCharge: 100, payment: 30500, profit: 7000 },
+  //     yearly: { sales: 36500, collections: 30500, discount: 400, purchased: 30800, serviceCharge: 100, payment: 30500, profit: 7000 }
+  //   };
+  // }, [stats]);
 
-  // BSP upcoming calculations based on unpaid/partial invoices
-  const bspBilling = useMemo(() => {
-    let totalIssues = 0;
-    let totalReissues = 0;
-    let totalPayable = 0;
+  // // BSP upcoming calculations based on unpaid/partial invoices
+  // const bspBilling = useMemo(() => {
+  //   let totalIssues = 0;
+  //   let totalReissues = 0;
+  //   let totalPayable = 0;
 
-    invoices.forEach((inv) => {
-      const isUnpaid = inv.status !== 'Paid';
-      if (isUnpaid) {
-        const clientPrice = inv.clientPrice || (inv.billing?.netTotal) || 0;
-        if (inv.type === 'Reissue') {
-          totalReissues += clientPrice;
-        } else {
-          totalIssues += clientPrice;
-        }
-        totalPayable += clientPrice;
-      }
-    });
+  //   // invoices.forEach((inv) => {
+  //   //   const isUnpaid = inv.status !== 'Paid';
+  //   //   if (isUnpaid) {
+  //   //     const clientPrice = inv.clientPrice || (inv.billing?.netTotal) || 0;
+  //   //     if (inv.type === 'Reissue') {
+  //   //       totalReissues += clientPrice;
+  //   //     } else {
+  //   //       totalIssues += clientPrice;
+  //   //     }
+  //   //     totalPayable += clientPrice;
+  //   //   }
+  //   // });
 
-    return {
-      issues: totalIssues,
-      reissues: totalReissues,
-      payable: totalPayable
-    };
-  }, [invoices]);
+  //   return {
+  //     issues: totalIssues,
+  //     reissues: totalReissues,
+  //     payable: totalPayable
+  //   };
+  // }, [invoices]);
 
   const remittancePercentage = 42; // Dynamic representation based on current usage / RHC Limit
 
@@ -142,15 +137,15 @@ export default function DashboardOverview({ stats, invoices, onNavigateToTab }: 
             </span>
           </div>
           <div className="space-y-2.5 text-sm">
-            <div className="flex justify-between"><span className="text-slate-500">Sales Amount</span><span className="font-semibold text-slate-800">৳{displayStats.daily.sales.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Collection Amount</span><span className="font-semibold text-emerald-600">৳{displayStats.daily.collections.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Discount Amount</span><span className="font-semibold text-rose-500">৳{displayStats.daily.discount.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Purchased Amount</span><span className="font-semibold text-slate-800">৳{displayStats.daily.purchased.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Service Charge</span><span className="font-semibold text-slate-800">৳{displayStats.daily.serviceCharge.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Payment Amount</span><span className="font-semibold text-slate-800">৳{displayStats.daily.payment.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Sales Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Collection Amount</span><span className="font-semibold text-emerald-600">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Discount Amount</span><span className="font-semibold text-rose-500">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Purchased Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Service Charge</span><span className="font-semibold text-slate-800">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Payment Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
             <div className="flex justify-between pt-2.5 border-t border-dashed border-slate-100 font-bold">
               <span className="text-slate-700">Net Profit</span>
-              <span className="text-blue-600">৳{displayStats.daily.profit.toLocaleString()}</span>
+              <span className="text-blue-600">৳00</span>
             </div>
           </div>
         </div>
@@ -167,15 +162,15 @@ export default function DashboardOverview({ stats, invoices, onNavigateToTab }: 
             </span>
           </div>
           <div className="space-y-2.5 text-sm">
-            <div className="flex justify-between"><span className="text-slate-500">Sales Amount</span><span className="font-semibold text-slate-800">৳{displayStats.monthly.sales.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Collection Amount</span><span className="font-semibold text-emerald-600">৳{displayStats.monthly.collections.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Discount Amount</span><span className="font-semibold text-rose-500">৳{displayStats.monthly.discount.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Purchased Amount</span><span className="font-semibold text-slate-800">৳{displayStats.monthly.purchased.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Service Charge</span><span className="font-semibold text-slate-800">৳{displayStats.monthly.serviceCharge.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Payment Amount</span><span className="font-semibold text-slate-800">৳{displayStats.monthly.payment.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Sales Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Collection Amount</span><span className="font-semibold text-emerald-600">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Discount Amount</span><span className="font-semibold text-rose-500">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Purchased Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Service Charge</span><span className="font-semibold text-slate-800">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Payment Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
             <div className="flex justify-between pt-2.5 border-t border-dashed border-slate-100 font-bold">
               <span className="text-slate-700">Net Profit</span>
-              <span className="text-indigo-600">৳{displayStats.monthly.profit.toLocaleString()}</span>
+              <span className="text-indigo-600">৳00</span>
             </div>
           </div>
         </div>
@@ -192,15 +187,15 @@ export default function DashboardOverview({ stats, invoices, onNavigateToTab }: 
             </span>
           </div>
           <div className="space-y-2.5 text-sm">
-            <div className="flex justify-between"><span className="text-slate-500">Sales Amount</span><span className="font-semibold text-slate-800">৳{displayStats.yearly.sales.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Collection Amount</span><span className="font-semibold text-emerald-600">৳{displayStats.yearly.collections.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Discount Amount</span><span className="font-semibold text-rose-500">৳{displayStats.yearly.discount.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Purchased Amount</span><span className="font-semibold text-slate-800">৳{displayStats.yearly.purchased.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Service Charge</span><span className="font-semibold text-slate-800">৳{displayStats.yearly.serviceCharge.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Payment Amount</span><span className="font-semibold text-slate-800">৳{displayStats.yearly.payment.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Sales Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Collection Amount</span><span className="font-semibold text-emerald-600">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Discount Amount</span><span className="font-semibold text-rose-500">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Purchased Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Service Charge</span><span className="font-semibold text-slate-800">৳000</span></div>
+            <div className="flex justify-between"><span className="text-slate-500">Payment Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
             <div className="flex justify-between pt-2.5 border-t border-dashed border-slate-100 font-bold">
               <span className="text-slate-700">Net Profit</span>
-              <span className="text-emerald-600">৳{displayStats.yearly.profit.toLocaleString()}</span>
+              <span className="text-emerald-600">৳00</span>
             </div>
           </div>
         </div>
@@ -427,9 +422,9 @@ export default function DashboardOverview({ stats, invoices, onNavigateToTab }: 
             <p className="text-3xs text-slate-400 font-medium mt-0.5">Real-time status of patients, medical visas, and treatments</p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-4xs font-bold text-slate-500">ACTIVE CASES: <strong className="text-slate-800 text-2xs">{Math.max(1, medicalHighlights.count)}</strong></span>
+            <span className="text-4xs font-bold text-slate-500">ACTIVE CASES: <strong className="text-slate-800 text-2xs">{Math.max(1, 2)}</strong></span>
             <span className="h-2.5 w-px bg-slate-200"></span>
-            <span className="text-4xs font-bold text-slate-500">MEDICAL SALES: <strong className="text-emerald-600 text-2xs">৳{Math.max(145000, medicalHighlights.sales * 10).toLocaleString()}</strong></span>
+            <span className="text-4xs font-bold text-slate-500">MEDICAL SALES: <strong className="text-emerald-600 text-2xs">৳{Math.max(145000, 2 * 10).toLocaleString()}</strong></span>
           </div>
         </div>
 
@@ -437,7 +432,7 @@ export default function DashboardOverview({ stats, invoices, onNavigateToTab }: 
           <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50/50 border border-emerald-100/60 flex flex-col justify-between">
             <div>
               <span className="text-4xs font-extrabold text-emerald-600 tracking-wider uppercase block">Hospital Bookings Value</span>
-              <span className="text-2xl font-black text-slate-800 block mt-1">৳{Math.max(145000, medicalHighlights.sales * 10).toLocaleString()}</span>
+              <span className="text-2xl font-black text-slate-800 block mt-1">৳{Math.max(145000, 2 * 10).toLocaleString()}</span>
             </div>
             <p className="text-4xs text-slate-400 font-medium mt-3">Direct corporate and personal healthcare treatment invoices</p>
           </div>
@@ -445,7 +440,7 @@ export default function DashboardOverview({ stats, invoices, onNavigateToTab }: 
           <div className="p-4 rounded-xl bg-gradient-to-br from-teal-50/60 to-cyan-50/40 border border-teal-100/60 flex flex-col justify-between">
             <div>
               <span className="text-4xs font-extrabold text-teal-600 tracking-wider uppercase block">Medical Agency Margin</span>
-              <span className="text-2xl font-black text-slate-800 block mt-1">৳{Math.max(20000, medicalHighlights.profit * 10).toLocaleString()}</span>
+              <span className="text-2xl font-black text-slate-800 block mt-1">৳{Math.max(20000, 2 * 10).toLocaleString()}</span>
             </div>
             <p className="text-4xs text-slate-400 font-medium mt-3">Welcare Trip premium commission & consultation margin</p>
           </div>
@@ -479,7 +474,7 @@ export default function DashboardOverview({ stats, invoices, onNavigateToTab }: 
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-2xs text-slate-700">
-                {medicalHighlights.appointments.map((appt, idx) => (
+                {/* {medicalHighlights.appointments.map((appt, idx) => (
                   <tr key={idx} className="hover:bg-slate-50 transition-colors">
                     <td className="py-2.5 px-4 font-bold text-slate-800">{appt.patient}</td>
                     <td className="py-2.5 px-4 font-medium text-slate-600">{appt.hospital}</td>
@@ -489,8 +484,8 @@ export default function DashboardOverview({ stats, invoices, onNavigateToTab }: 
                       {appt.date.includes('T') ? new Date(appt.date).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'}) : appt.date}
                     </td>
                   </tr>
-                ))}
-                {medicalHighlights.appointments.length === 0 && (
+                ))} */}
+                {/* {medicalHighlights.appointments.length === 0 && (
                   <tr>
                     <td className="py-2.5 px-4 font-bold text-slate-800">Haji Mohammad Selim</td>
                     <td className="py-2.5 px-4 font-medium text-slate-600">Mount Elizabeth Hospital (Singapore)</td>
@@ -498,7 +493,7 @@ export default function DashboardOverview({ stats, invoices, onNavigateToTab }: 
                     <td className="py-2.5 px-4 text-center"><span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 font-bold rounded-full text-3xs">Cardiology</span></td>
                     <td className="py-2.5 px-4 text-right text-slate-500 font-mono text-3xs">Jul 20, 2026</td>
                   </tr>
-                )}
+                )} */}
               </tbody>
             </table>
           </div>
@@ -525,19 +520,19 @@ export default function DashboardOverview({ stats, invoices, onNavigateToTab }: 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
           <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
             <p className="text-3xs text-slate-400 uppercase tracking-widest font-bold">Unpaid Ticket Issues</p>
-            <p className="text-base font-bold text-slate-800 mt-1">৳{bspBilling.issues.toLocaleString()}</p>
+            <p className="text-base font-bold text-slate-800 mt-1">৳00</p>
           </div>
           <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
             <p className="text-3xs text-slate-400 uppercase tracking-widest font-bold">Unpaid Reissues</p>
-            <p className="text-base font-bold text-slate-800 mt-1">৳{bspBilling.reissues.toLocaleString()}</p>
+            <p className="text-base font-bold text-slate-800 mt-1">৳00</p>
           </div>
           <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
             <p className="text-3xs text-slate-400 uppercase tracking-widest font-bold">Est. Net Commission</p>
-            <p className="text-base font-bold text-emerald-600 mt-1">৳{(bspBilling.issues * 0.07).toLocaleString(undefined, {maximumFractionDigits: 0})}</p>
+            <p className="text-base font-bold text-emerald-600 mt-1">৳22</p>
           </div>
           <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
             <p className="text-3xs text-blue-500 uppercase tracking-widest font-bold">Total BSP Payable</p>
-            <p className="text-base font-black text-blue-700 mt-1">৳{bspBilling.payable.toLocaleString()}</p>
+            <p className="text-base font-black text-blue-700 mt-1">৳333</p>
           </div>
         </div>
       </div>
@@ -551,7 +546,7 @@ export default function DashboardOverview({ stats, invoices, onNavigateToTab }: 
           </h3>
           <button 
             id="view-all-invoices-dashboard"
-            onClick={() => onNavigateToTab('ledger')}
+            // onClick={() => onNavigateToTab('ledger')}
             className="text-xs text-blue-600 hover:text-blue-800 font-bold flex items-center gap-0.5 cursor-pointer"
           >
             Go to Ledger
@@ -571,7 +566,7 @@ export default function DashboardOverview({ stats, invoices, onNavigateToTab }: 
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-2xs text-slate-700">
-              {clientWiseSummary.map((client, index) => {
+              {/* {clientWiseSummary.map((client, index) => {
                 const margin = client.sales > 0 ? (client.profit / client.sales) * 100 : 0;
                 return (
                   <tr key={index} className="hover:bg-slate-50/50 transition-colors">
@@ -586,12 +581,12 @@ export default function DashboardOverview({ stats, invoices, onNavigateToTab }: 
                     </td>
                   </tr>
                 );
-              })}
-              {clientWiseSummary.length === 0 && (
+              })} */}
+              {/* {clientWiseSummary.length === 0 && (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-slate-400 font-medium">No client transactions logged yet. Add a booking to generate ledger accounts.</td>
                 </tr>
-              )}
+              )} */}
             </tbody>
           </table>
         </div>

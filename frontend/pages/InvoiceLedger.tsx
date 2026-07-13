@@ -23,45 +23,47 @@ import {
 } from 'lucide-react';
 import { Invoice } from '../types';
 
-interface InvoiceLedgerProps {
-  invoices: Invoice[];
-  onUpdateStatus: (id: string, status: 'Paid' | 'Unpaid' | 'Partial') => Promise<void>;
-  onDeleteInvoice: (id: string) => Promise<void>;
-  isLoading?: boolean;
-}
+// interface InvoiceLedgerProps {
+//   invoices: Invoice[];
+//   onUpdateStatus: (id: string, status: 'Paid' | 'Unpaid' | 'Partial') => Promise<void>;
+//   onDeleteInvoice: (id: string) => Promise<void>;
+//   isLoading?: boolean;
+// }
 
-export default function InvoiceLedger({ invoices, onUpdateStatus, onDeleteInvoice, isLoading = false }: InvoiceLedgerProps) {
+export default function InvoiceLedger() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(null);
 
+  
+
   // Compute stats on the current filtered view!
-  const filteredInvoices = useMemo(() => {
-    return invoices.filter((inv) => {
-      const matchSearch = 
-        inv.invoiceNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        inv.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (inv.paxName && inv.paxName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (inv.route && inv.route.toLowerCase().includes(searchQuery.toLowerCase()));
+  // const filteredInvoices = useMemo(() => {
+  //   return invoices.filter((inv) => {
+  //     const matchSearch = 
+  //       inv.invoiceNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       inv.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //       (inv.paxName && inv.paxName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+  //       (inv.route && inv.route.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      const matchType = typeFilter === 'All' || inv.type === typeFilter;
-      const matchStatus = statusFilter === 'All' || inv.status === statusFilter;
+  //     const matchType = typeFilter === 'All' || inv.type === typeFilter;
+  //     const matchStatus = statusFilter === 'All' || inv.status === statusFilter;
 
-      return matchSearch && matchType && matchStatus;
-    });
-  }, [invoices, searchQuery, typeFilter, statusFilter]);
+  //     return matchSearch && matchType && matchStatus;
+  //   });
+  // }, [invoices, searchQuery, typeFilter, statusFilter]);
 
   // Aggregate totals of filtered rows
-  const ledgerTotals = useMemo(() => {
-    let totalSales = 0;
-    let totalProfit = 0;
-    filteredInvoices.forEach(inv => {
-      totalSales += inv.clientPrice || (inv.billing?.netTotal) || 0;
-      totalProfit += inv.profit || (inv.billing?.totalProfit) || 0;
-    });
-    return { sales: totalSales, profit: totalProfit };
-  }, [filteredInvoices]);
+  // const ledgerTotals = useMemo(() => {
+  //   let totalSales = 0;
+  //   let totalProfit = 0;
+  //   filteredInvoices.forEach(inv => {
+  //     totalSales += inv.clientPrice || (inv.billing?.netTotal) || 0;
+  //     totalProfit += inv.profit || (inv.billing?.totalProfit) || 0;
+  //   });
+  //   return { sales: totalSales, profit: totalProfit };
+  // }, [filteredInvoices]);
 
   const getTypeBadgeStyles = (type: string) => {
     switch (type) {
@@ -101,11 +103,11 @@ export default function InvoiceLedger({ invoices, onUpdateStatus, onDeleteInvoic
           <div className="flex gap-4 text-xs font-semibold text-slate-600">
             <div className="bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 flex items-center gap-1.5">
               <DollarSign className="h-4 w-4 text-slate-400" />
-              Sales Total: <strong className="text-slate-800">৳{ledgerTotals.sales.toLocaleString()}</strong>
+              Sales Total: <strong className="text-slate-800">৳ 000</strong>
             </div>
             <div className="bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 flex items-center gap-1.5 text-emerald-700">
               <TrendingUp className="h-4 w-4 text-emerald-500" />
-              Profit Margin: <strong>৳{ledgerTotals.profit.toLocaleString()}</strong>
+              Profit Margin: <strong>৳ 000</strong>
             </div>
           </div>
         </div>
@@ -188,7 +190,7 @@ export default function InvoiceLedger({ invoices, onUpdateStatus, onDeleteInvoic
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-2xs text-slate-700">
-              {filteredInvoices.map((inv) => {
+              {/* {filteredInvoices.map((inv) => {
                 const revenue = inv.clientPrice || (inv.billing?.netTotal) || 0;
                 const profitVal = inv.profit || (inv.billing?.totalProfit) || 0;
                 const displayRoute = inv.route || (inv.ticketInfo?.route) || 'Local Tour';
@@ -198,7 +200,6 @@ export default function InvoiceLedger({ invoices, onUpdateStatus, onDeleteInvoic
                 return (
                   <React.Fragment key={inv.id}>
                     <tr className="hover:bg-slate-50/50 transition-colors">
-                      {/* Invoice ID */}
                       <td className="py-3.5 px-6 font-bold text-slate-800 tracking-tight flex items-center gap-2">
                         <button 
                           onClick={() => setExpandedInvoiceId(isExpanded ? null : inv.id)}
@@ -209,33 +210,26 @@ export default function InvoiceLedger({ invoices, onUpdateStatus, onDeleteInvoic
                         <span>{inv.invoiceNo}</span>
                       </td>
                       
-                      {/* Client */}
                       <td className="py-3.5 px-4 font-semibold text-slate-700 max-w-xs truncate">{inv.clientName}</td>
                       
-                      {/* Booking Type badge */}
                       <td className="py-3.5 px-4">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-3xs ${getTypeBadgeStyles(inv.type)}`}>
                           {inv.type}
                         </span>
                       </td>
                       
-                      {/* Pax */}
                       <td className="py-3.5 px-4 font-medium text-slate-600">{displayPax}</td>
                       
-                      {/* Route */}
                       <td className="py-3.5 px-4 font-semibold text-slate-500 font-mono tracking-tight">{displayRoute}</td>
                       
-                      {/* Revenue */}
                       <td className="py-3.5 px-4 text-right font-bold text-slate-800">৳{revenue.toLocaleString()}</td>
                       
-                      {/* Profit */}
                       <td className="py-3.5 px-4 text-right text-emerald-600 font-bold">৳{profitVal.toLocaleString()}</td>
                       
-                      {/* Interactive Payment Status badge */}
                       <td className="py-3.5 px-4 text-center relative">
                         <select
                           value={inv.status}
-                          onChange={(e) => onUpdateStatus(inv.id, e.target.value as any)}
+                          // onChange={(e) => onUpdateStatus(inv.id, e.target.value as any)}
                           className={`text-3xs font-bold py-1 px-2.5 rounded-full outline-none cursor-pointer transition-colors ${getStatusBadgeStyles(inv.status)}`}
                         >
                           <option value="Paid">Paid</option>
@@ -244,13 +238,12 @@ export default function InvoiceLedger({ invoices, onUpdateStatus, onDeleteInvoic
                         </select>
                       </td>
                       
-                      {/* Actions Panel */}
                       <td className="py-3.5 px-6 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => {
                               if (confirm(`Are you sure you want to delete invoice ${inv.invoiceNo}? This is non-reversible and will adjust the reports.`)) {
-                                onDeleteInvoice(inv.id);
+                                // onDeleteInvoice(inv.id);
                               }
                             }}
                             className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
@@ -262,13 +255,11 @@ export default function InvoiceLedger({ invoices, onUpdateStatus, onDeleteInvoic
                       </td>
                     </tr>
 
-                    {/* Expandable Receipt Detail row */}
                     {isExpanded && (
                       <tr className="bg-slate-50/60">
                         <td colSpan={9} className="p-6 border-t border-b border-slate-200/50">
                           <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-inner grid grid-cols-1 md:grid-cols-2 gap-6 text-xs animate-fade-in">
                             
-                            {/* Left Column: Client & Passenger info */}
                             <div className="space-y-4">
                               <h4 className="font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
                                 <User className="h-4 w-4 text-emerald-500" />
@@ -284,7 +275,6 @@ export default function InvoiceLedger({ invoices, onUpdateStatus, onDeleteInvoic
                                 <div><span className="text-slate-400 block font-medium">Email Address:</span> <span className="text-slate-700">{inv.passportInfo?.email || 'N/A'}</span></div>
                               </div>
 
-                              {/* Flight Details if available */}
                               {inv.ticketInfo && inv.ticketInfo.ticketNo && (
                                 <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
                                   <h4 className="font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 pb-1">
@@ -303,9 +293,7 @@ export default function InvoiceLedger({ invoices, onUpdateStatus, onDeleteInvoic
                               )}
                             </div>
 
-                            {/* Right Column: Accomodation & Medical Tourism coords */}
                             <div className="space-y-4">
-                              {/* Medical Tourism Details if available */}
                               {inv.medicalInfo && inv.medicalInfo.hospitalName ? (
                                 <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100/60 space-y-2">
                                   <h4 className="font-extrabold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-emerald-100">
@@ -350,7 +338,6 @@ export default function InvoiceLedger({ invoices, onUpdateStatus, onDeleteInvoic
                                 </div>
                               )}
 
-                              {/* Accommodation & Hotels stays */}
                               {inv.accommodation && inv.accommodation.hotelName && (
                                 <div className="space-y-2">
                                   <h4 className="font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-slate-100">
@@ -366,7 +353,6 @@ export default function InvoiceLedger({ invoices, onUpdateStatus, onDeleteInvoic
                                 </div>
                               )}
 
-                              {/* Visa & Services */}
                               {inv.visaInfo && inv.visaInfo.visaNo && (
                                 <div className="space-y-2 pt-2 border-t border-slate-100">
                                   <h4 className="font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 pb-1">
@@ -380,7 +366,6 @@ export default function InvoiceLedger({ invoices, onUpdateStatus, onDeleteInvoic
                                 </div>
                               )}
 
-                              {/* Detailed Billing Summary */}
                               {inv.billing && (
                                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1">
                                   <p className="font-bold text-slate-700 uppercase tracking-widest text-4xs">Financial Ledger Summary</p>
@@ -398,15 +383,15 @@ export default function InvoiceLedger({ invoices, onUpdateStatus, onDeleteInvoic
                     )}
                   </React.Fragment>
                 );
-              })}
+              })} */}
 
-              {filteredInvoices.length === 0 && (
+              {/* {filteredInvoices.length === 0 && (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-slate-400 font-medium">
                     {isLoading ? 'Fetching database logs...' : 'No invoices matched current query filter parameters.'}
                   </td>
                 </tr>
-              )}
+              )} */}
             </tbody>
           </table>
         </div>

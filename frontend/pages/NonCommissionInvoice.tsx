@@ -2,12 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Coins, Sparkles, Save } from 'lucide-react';
 import { Invoice } from '../types';
 
-interface NonCommissionInvoiceProps {
-  onAddInvoice: (inv: Partial<Invoice>) => Promise<boolean>;
-  onNavigateToTab: (tab: string) => void;
-}
 
-export default function NonCommissionInvoice({ onAddInvoice, onNavigateToTab }: NonCommissionInvoiceProps) {
+
+export default function NonCommissionInvoice() {
   const [loading, setLoading] = useState(false);
   const [aiFilling, setAiFilling] = useState(false);
   const [employeesList, setEmployeesList] = useState<any[]>([]);
@@ -91,39 +88,39 @@ export default function NonCommissionInvoice({ onAddInvoice, onNavigateToTab }: 
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setLoading(true);
 
-    const success = await onAddInvoice({
-      invoiceNo,
-      clientName,
-      salesBy,
-      salesDate,
-      dueDate,
-      type: 'Non Commission',
-      status: 'Unpaid',
-      ticketNo,
-      paxName,
-      email,
-      airline,
-      route,
-      pnr,
-      journeyDate,
-      returnDate,
-      grossFare: Number(grossFare),
-      purchasePrice: Number(purchasePrice),
-      clientPrice: Number(clientPrice),
-      profit,
-      extraFee: Number(extraFee),
-      discount: Number(discount)
-    });
+  //   const success = await onAddInvoice({
+  //     invoiceNo,
+  //     clientName,
+  //     salesBy,
+  //     salesDate,
+  //     dueDate,
+  //     type: 'Non Commission',
+  //     status: 'Unpaid',
+  //     ticketNo,
+  //     paxName,
+  //     email,
+  //     airline,
+  //     route,
+  //     pnr,
+  //     journeyDate,
+  //     returnDate,
+  //     grossFare: Number(grossFare),
+  //     purchasePrice: Number(purchasePrice),
+  //     clientPrice: Number(clientPrice),
+  //     profit,
+  //     extraFee: Number(extraFee),
+  //     discount: Number(discount)
+  //   });
 
-    setLoading(false);
-    if (success) {
-      onNavigateToTab('ledger');
-    }
-  };
+  //   setLoading(false);
+  //   if (success) {
+  //     onNavigateToTab('ledger');
+  //   }
+  // };
 
   return (
     <div id="non-commission-container" className="flex-1 p-8 bg-slate-50 overflow-y-auto space-y-6">
@@ -148,7 +145,9 @@ export default function NonCommissionInvoice({ onAddInvoice, onNavigateToTab }: 
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form 
+      // onSubmit={handleSubmit} 
+      className="space-y-6">
         
         {/* Metadata */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/60 grid grid-cols-1 md:grid-cols-5 gap-4 text-xs">
@@ -256,7 +255,9 @@ export default function NonCommissionInvoice({ onAddInvoice, onNavigateToTab }: 
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pb-8">
-          <button type="button" onClick={() => onNavigateToTab('dashboard')} className="px-6 py-2.5 border border-slate-200 bg-white text-slate-600 rounded-xl text-xs font-bold cursor-pointer transition-all hover:bg-slate-50">
+          <button type="button" 
+          // onClick={() => onNavigateToTab('dashboard')} 
+          className="px-6 py-2.5 border border-slate-200 bg-white text-slate-600 rounded-xl text-xs font-bold cursor-pointer transition-all hover:bg-slate-50">
             Cancel
           </button>
           <button type="submit" disabled={loading} className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-lg shadow-indigo-500/20">

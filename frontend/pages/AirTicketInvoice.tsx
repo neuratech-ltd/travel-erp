@@ -9,17 +9,69 @@ import {
   Calendar, 
   HelpCircle 
 } from 'lucide-react';
-import { Invoice } from '../types';
+import { Invoice, ReportStats } from '../types';
 
-interface AirTicketInvoiceProps {
-  onAddInvoice: (inv: Partial<Invoice>) => Promise<boolean>;
-  onNavigateToTab: (tab: string) => void;
-}
 
-export default function AirTicketInvoice({ onAddInvoice, onNavigateToTab }: AirTicketInvoiceProps) {
+
+export default function AirTicketInvoice() {
   const [loading, setLoading] = useState(false);
   const [aiFilling, setAiFilling] = useState(false);
   const [employeesList, setEmployeesList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [stats, setStats] = useState<ReportStats | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  
+
+
+  const fetchErpData = async () => {
+    setIsLoading(true);
+    try {
+      // 1. Fetch Invoices
+      const invResponse = await fetch('/api/invoices');
+      const invData = await invResponse.json();
+      if (invData.success) {
+        setInvoices(invData.data);
+      }
+
+      // 2. Fetch Report Stats
+      const statsResponse = await fetch('/api/reports/stats');
+      const statsData = await statsResponse.json();
+      if (statsData.success) {
+        setStats(statsData.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch ERP data from Express API:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+   const handleAddInvoice = async (newInvoiceData: Partial<Invoice>): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newInvoiceData),
+      });
+
+      const resData = await response.json();
+      if (resData.success) {
+        // Recalculate and pull latest state
+        await fetchErpData();
+        return true;
+      } else {
+        throw new Error(resData.message || 'API rejected billing entry');
+      }
+    } catch (e: any) {
+      alert(`Error logging travel billing voucher: ${e.message}`);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   React.useEffect(() => {
     fetch('/api/employees')
@@ -165,7 +217,7 @@ export default function AirTicketInvoice({ onAddInvoice, onNavigateToTab }: AirT
     e.preventDefault();
     setLoading(true);
     
-    const isSuccess = await onAddInvoice({
+    const isSuccess = await handleAddInvoice({
       invoiceNo,
       clientName,
       salesBy,
@@ -201,9 +253,9 @@ export default function AirTicketInvoice({ onAddInvoice, onNavigateToTab }: AirT
     });
 
     setLoading(false);
-    if (isSuccess) {
-      onNavigateToTab('ledger');
-    }
+    // if (isSuccess) {
+    //   onNavigateToTab('ledger');
+    // }
   };
 
   return (
@@ -652,7 +704,7 @@ export default function AirTicketInvoice({ onAddInvoice, onNavigateToTab }: AirT
           <button
             type="button"
             id="cancel-invoice-btn"
-            onClick={() => onNavigateToTab('dashboard')}
+            // onClick={() => onNavigateToTab('dashboard')}
             className="px-6 py-2.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-bold cursor-pointer transition-all active:scale-95"
           >
             Cancel

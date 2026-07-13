@@ -1,20 +1,39 @@
 import React, { useState, useEffect } from 'react';
+import { Outlet, useLocation, useNavigate, matchPath } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import DashboardOverview from './components/DashboardOverview';
-import AirTicketInvoice from './pages/AirTicketInvoice';
-import NonCommissionInvoice from './pages/NonCommissionInvoice';
-import ReissueInvoice from './pages/ReissueInvoice';
-import TourPackageInvoice from './pages/TourPackageInvoice';
-import HotelVisaInvoice from './pages/HotelVisaInvoice';
-import InvoiceLedger from './pages/InvoiceLedger';
-import AiConsultant from './pages/AiConsultant';
-import SalesReport from './pages/SalesReport';
-import Employees from './pages/Employees';
+import { paths } from './routes/paths';
 import { Invoice, ReportStats } from './types';
 
+// Shared data + handlers passed down to every routed page via useOutletContext()
+export interface WorkspaceContext {
+  invoices: Invoice[];
+  stats: ReportStats | null;
+  isLoading: boolean;
+  globalSearch: string;
+  onAddInvoice: (newInvoiceData: Partial<Invoice>) => Promise<boolean>;
+  onUpdateStatus: (id: string, status: 'Paid' | 'Unpaid' | 'Partial') => Promise<void>;
+  onDeleteInvoice: (id: string) => Promise<void>;
+}
+
+// Maps a route path to the readable header title for that page
+const TAB_TITLES: { path: string; title: string }[] = [
+  { path: paths.dashboard, title: 'Welcare Trip Executive Analytics' },
+  { path: paths.airTicketInvoice, title: 'Air Ticket Booking Billing' },
+  { path: paths.nonCommissionInvoice, title: 'Net-Rate Non-Commission Invoice' },
+  { path: paths.reissueInvoice, title: 'Airline Booking Reissue Adjuster' },
+  { path: paths.tourPackageInvoice, title: 'Holiday & Medical Package Builder' },
+  { path: paths.hotelVisaInvoice, title: 'Hotel Bookings & Visa Desk' },
+  { path: paths.invoiceLedger, title: 'Financial Ledger Accounts & Receipts' },
+  { path: paths.salesReport, title: 'Welcare Trip Monthly Sales Worksheet' },
+  { path: paths.employees, title: 'Employee Directory & ERP Access Roles' },
+  { path: paths.aiConsultant, title: 'AI Travel & Medical Intelligence Consultant' },
+];
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [stats, setStats] = useState<ReportStats | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -115,115 +134,42 @@ export default function App() {
   const handleGlobalSearch = (query: string) => {
     setGlobalSearch(query);
     // If the search query has content, automatically navigate to ledger for instant filtration!
-    if (query.trim() !== '' && activeTab !== 'ledger' && activeTab !== 'ai-consultant') {
-      setActiveTab('ledger');
+    const onLedger = !!matchPath(paths.invoiceLedger, location.pathname);
+    const onAiConsultant = !!matchPath(paths.aiConsultant, location.pathname);
+    if (query.trim() !== '' && !onLedger && !onAiConsultant) {
+      navigate(paths.invoiceLedger);
     }
   };
 
-  // Maps active tab ID to tab readable title
+  // Maps the current route to its readable title
   const getHeaderTitle = () => {
-    switch (activeTab) {
-      case 'dashboard': return 'Welcare Trip Executive Analytics';
-      case 'air-ticket': return 'Air Ticket Booking Billing';
-      case 'non-commission': return 'Net-Rate Non-Commission Invoice';
-      case 'reissue': return 'Airline Booking Reissue Adjuster';
-      case 'tour-package': return 'Holiday & Medical Package Builder';
-      case 'hotel-visa': return 'Hotel Bookings & Visa Desk';
-      case 'ledger': return 'Financial Ledger Accounts & Receipts';
-      case 'sales-report': return 'Welcare Trip Monthly Sales Worksheet';
-      case 'employees': return 'Employee Directory & ERP Access Roles';
-      case 'ai-consultant': return 'AI Travel & Medical Intelligence Consultant';
-      default: return 'Welcare Trip ERP Workspace';
-    }
+    const match = TAB_TITLES.find((tab) => matchPath({ path: tab.path, end: true }, location.pathname));
+    return match ? match.title : 'Welcare Trip ERP Workspace';
   };
 
-  const renderActiveView = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return (
-          <DashboardOverview 
-            stats={stats} 
-            invoices={invoices} 
-            onNavigateToTab={setActiveTab} 
-          />
-        );
-      case 'air-ticket':
-        return (
-          <AirTicketInvoice 
-            onAddInvoice={handleAddInvoice} 
-            onNavigateToTab={setActiveTab} 
-          />
-        );
-      case 'non-commission':
-        return (
-          <NonCommissionInvoice 
-            onAddInvoice={handleAddInvoice} 
-            onNavigateToTab={setActiveTab} 
-          />
-        );
-      case 'reissue':
-        return (
-          <ReissueInvoice 
-            onAddInvoice={handleAddInvoice} 
-            onNavigateToTab={setActiveTab} 
-          />
-        );
-      case 'tour-package':
-        return (
-          <TourPackageInvoice 
-            onAddInvoice={handleAddInvoice} 
-            onNavigateToTab={setActiveTab} 
-          />
-        );
-      case 'hotel-visa':
-        return (
-          <HotelVisaInvoice 
-            onAddInvoice={handleAddInvoice} 
-            onNavigateToTab={setActiveTab} 
-          />
-        );
-      case 'ledger':
-        return (
-          <InvoiceLedger 
-            invoices={invoices} 
-            onUpdateStatus={handleUpdateStatus} 
-            onDeleteInvoice={handleDeleteInvoice} 
-            isLoading={isLoading}
-          />
-        );
-      case 'sales-report':
-        return <SalesReport />;
-      case 'employees':
-        return <Employees />;
-      case 'ai-consultant':
-        return <AiConsultant />;
-      default:
-        return (
-          <div className="flex-1 p-8 flex items-center justify-center text-slate-400 font-medium bg-slate-50">
-            Select a valid module in the left sidebar navigation menu to load.
-          </div>
-        );
-    }
+  const outletContext: WorkspaceContext = {
+    invoices,
+    stats,
+    isLoading,
+    globalSearch,
+    onAddInvoice: handleAddInvoice,
+    onUpdateStatus: handleUpdateStatus,
+    onDeleteInvoice: handleDeleteInvoice,
   };
 
   return (
     <div id="app-root-layout" className="flex h-screen w-screen overflow-hidden font-sans antialiased text-slate-800 bg-slate-100">
-      {/* Sidebar Navigation */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar />
 
-      {/* Main Workspace Frame */}
       <div id="main-workspace-frame" className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header Bar */}
-        <Header 
-          title={getHeaderTitle()} 
-          onSearch={handleGlobalSearch} 
-          onRefresh={fetchErpData} 
+        <Header
+          title={getHeaderTitle()}
+          onSearch={handleGlobalSearch}
+          onRefresh={fetchErpData}
           isLoading={isLoading}
         />
-
-        {/* Dynamic Workspace Container */}
         <main id="active-viewport" className="flex-1 overflow-hidden flex flex-col">
-          {renderActiveView()}
+          <Outlet context={outletContext} />
         </main>
       </div>
     </div>

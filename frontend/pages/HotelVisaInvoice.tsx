@@ -2,12 +2,9 @@ import React, { useState } from 'react';
 import { Hotel, ShieldAlert, Sparkles, Save } from 'lucide-react';
 import { Invoice } from '../types';
 
-interface HotelVisaInvoiceProps {
-  onAddInvoice: (inv: Partial<Invoice>) => Promise<boolean>;
-  onNavigateToTab: (tab: string) => void;
-}
 
-export default function HotelVisaInvoice({ onAddInvoice, onNavigateToTab }: HotelVisaInvoiceProps) {
+
+export default function HotelVisaInvoice() {
   const [loading, setLoading] = useState(false);
   const [bookingType, setBookingType] = useState<'Hotel' | 'Visa'>('Hotel');
   const [employeesList, setEmployeesList] = useState<any[]>([]);
@@ -49,25 +46,25 @@ export default function HotelVisaInvoice({ onAddInvoice, onNavigateToTab }: Hote
     const sale = bookingType === 'Hotel' ? Number(hotelSale) * Number(nights) : Number(visaSale);
     const profit = Math.max(0, sale - cost);
 
-    const success = await onAddInvoice({
-      invoiceNo,
-      clientName,
-      salesBy,
-      salesDate: '2026-07-07',
-      dueDate: '2026-07-21',
-      type: bookingType,
-      status: 'Paid',
-      purchasePrice: cost,
-      clientPrice: sale,
-      profit,
-      route: bookingType === 'Hotel' ? hotelName : `Visa: ${visaCountry}`,
-      paxName: 'Michael Chang'
-    });
+    // const success = await onAddInvoice({
+    //   invoiceNo,
+    //   clientName,
+    //   salesBy,
+    //   salesDate: '2026-07-07',
+    //   dueDate: '2026-07-21',
+    //   type: bookingType,
+    //   status: 'Paid',
+    //   purchasePrice: cost,
+    //   clientPrice: sale,
+    //   profit,
+    //   route: bookingType === 'Hotel' ? hotelName : `Visa: ${visaCountry}`,
+    //   paxName: 'Michael Chang'
+    // });
 
-    setLoading(false);
-    if (success) {
-      onNavigateToTab('ledger');
-    }
+    // setLoading(false);
+    // if (success) {
+    //   onNavigateToTab('ledger');
+    // }
   };
 
   return (
@@ -192,7 +189,9 @@ export default function HotelVisaInvoice({ onAddInvoice, onNavigateToTab }: Hote
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pb-8">
-          <button type="button" onClick={() => onNavigateToTab('dashboard')} className="px-6 py-2.5 border border-slate-200 bg-white text-slate-600 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50">
+          <button type="button" 
+          // onClick={() => onNavigateToTab('dashboard')} 
+          className="px-6 py-2.5 border border-slate-200 bg-white text-slate-600 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50">
             Cancel
           </button>
           <button type="submit" disabled={loading} className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-lg shadow-indigo-500/20">

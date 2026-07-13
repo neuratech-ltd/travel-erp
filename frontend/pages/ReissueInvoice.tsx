@@ -2,12 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw, Sparkles, Save } from 'lucide-react';
 import { Invoice } from '../types';
 
-interface ReissueInvoiceProps {
-  onAddInvoice: (inv: Partial<Invoice>) => Promise<boolean>;
-  onNavigateToTab: (tab: string) => void;
-}
 
-export default function ReissueInvoice({ onAddInvoice, onNavigateToTab }: ReissueInvoiceProps) {
+
+export default function ReissueInvoice() {
   const [loading, setLoading] = useState(false);
   const [aiFilling, setAiFilling] = useState(false);
   const [employeesList, setEmployeesList] = useState<any[]>([]);
@@ -82,35 +79,35 @@ export default function ReissueInvoice({ onAddInvoice, onNavigateToTab }: Reissu
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setLoading(true);
 
-    const success = await onAddInvoice({
-      invoiceNo,
-      clientName,
-      salesBy,
-      salesDate,
-      dueDate,
-      type: 'Reissue',
-      status: 'Unpaid',
-      ticketNo,
-      paxName: 'Robert Johnson', // default matching list
-      airline,
-      route,
-      pnr,
-      purchasePrice,
-      clientPrice,
-      profit,
-      extraFee: Number(extraFee),
-      discount: Number(discount)
-    });
+  //   const success = await onAddInvoice({
+  //     invoiceNo,
+  //     clientName,
+  //     salesBy,
+  //     salesDate,
+  //     dueDate,
+  //     type: 'Reissue',
+  //     status: 'Unpaid',
+  //     ticketNo,
+  //     paxName: 'Robert Johnson', // default matching list
+  //     airline,
+  //     route,
+  //     pnr,
+  //     purchasePrice,
+  //     clientPrice,
+  //     profit,
+  //     extraFee: Number(extraFee),
+  //     discount: Number(discount)
+  //   });
 
-    setLoading(false);
-    if (success) {
-      onNavigateToTab('ledger');
-    }
-  };
+  //   setLoading(false);
+  //   if (success) {
+  //     onNavigateToTab('ledger');
+  //   }
+  // };
 
   return (
     <div id="reissue-invoice-container" className="flex-1 p-8 bg-slate-50 overflow-y-auto space-y-6">
@@ -135,7 +132,8 @@ export default function ReissueInvoice({ onAddInvoice, onNavigateToTab }: Reissu
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form // onSubmit={handleSubmit} 
+        className="space-y-6">
         
         {/* Metadata */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200/60 grid grid-cols-1 md:grid-cols-5 gap-4 text-xs">
@@ -227,7 +225,9 @@ export default function ReissueInvoice({ onAddInvoice, onNavigateToTab }: Reissu
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pb-8">
-          <button type="button" onClick={() => onNavigateToTab('dashboard')} className="px-6 py-2.5 border border-slate-200 bg-white text-slate-600 rounded-xl text-xs font-bold cursor-pointer transition-all hover:bg-slate-50">
+          <button type="button" 
+          // onClick={() => onNavigateToTab('dashboard')} 
+          className="px-6 py-2.5 border border-slate-200 bg-white text-slate-600 rounded-xl text-xs font-bold cursor-pointer transition-all hover:bg-slate-50">
             Cancel
           </button>
           <button type="submit" disabled={loading} className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-lg shadow-blue-500/20">
