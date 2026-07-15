@@ -89,7 +89,6 @@ export default function InvoiceLedger() {
   return (
     <div id="invoice-ledger-container" className="flex-1 p-8 bg-slate-50 overflow-y-auto space-y-6">
       
-      {/* Search & Filter Top Bar */}
       <div id="ledger-filters" className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -113,7 +112,6 @@ export default function InvoiceLedger() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
-          {/* Search bar */}
           <div className="relative">
             <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-slate-400" />
@@ -144,7 +142,6 @@ export default function InvoiceLedger() {
             </select>
           </div>
 
-          {/* Status dropdown */}
           <div>
             <select
               value={statusFilter}
@@ -158,7 +155,6 @@ export default function InvoiceLedger() {
             </select>
           </div>
 
-          {/* Clean filters link */}
           <div className="flex items-center">
             {(searchQuery || typeFilter !== 'All' || statusFilter !== 'All') && (
               <button 

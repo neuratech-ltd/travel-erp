@@ -13,10 +13,8 @@ export default function Header({ title, onSearch, onRefresh, isLoading = false }
   const [dateTimeStr, setDateTimeStr] = useState('July 10, 2026 - 22:50 UTC');
 
   useEffect(() => {
-    // Keep exact system baseline UTC for high fidelity matching
     const updateTimeStr = () => {
       const now = new Date();
-      // Force month/day/year to stay in July 2026
       const timePart = now.toLocaleTimeString('en-US', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setDateTimeStr(`July 10, 2026 - ${timePart} (UTC)`);
     };
@@ -33,7 +31,6 @@ export default function Header({ title, onSearch, onRefresh, isLoading = false }
 
   return (
     <header id="header-container" className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-8 shrink-0 z-10 shadow-sm">
-      {/* Title */}
       <div id="header-title-block" className="flex items-center gap-3">
         <h2 id="header-title" className="text-xl font-bold text-slate-800 tracking-tight">{title}</h2>
         {isLoading && (

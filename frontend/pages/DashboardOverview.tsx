@@ -11,6 +11,9 @@ import {
   HeartPulse
 } from 'lucide-react';
 import { Invoice, ReportStats } from '../types';
+import ReportCard from '@/components/dashboard/ReportCard';
+import TourismOverviewCard from '@/components/dashboard/TourismOverviewCard';
+import BillingSummeryCard from '@/components/dashboard/BillingSummeryCard';
 
 
 export default function DashboardOverview() {
@@ -122,84 +125,10 @@ export default function DashboardOverview() {
   return (
     <div id="dashboard-overview-container" className="flex-1 p-8 overflow-y-auto space-y-8 bg-slate-50">
       
-      {/* Reports: Daily, Monthly, Yearly Panels */}
       <div id="report-grids-container" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Daily Report Card */}
-        <div id="report-card-daily" className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-500" />
-              DAILY REPORT
-            </h3>
-            <span className="text-3xs font-semibold bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full uppercase tracking-wider">
-              Today (Jul 7)
-            </span>
-          </div>
-          <div className="space-y-2.5 text-sm">
-            <div className="flex justify-between"><span className="text-slate-500">Sales Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Collection Amount</span><span className="font-semibold text-emerald-600">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Discount Amount</span><span className="font-semibold text-rose-500">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Purchased Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Service Charge</span><span className="font-semibold text-slate-800">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Payment Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
-            <div className="flex justify-between pt-2.5 border-t border-dashed border-slate-100 font-bold">
-              <span className="text-slate-700">Net Profit</span>
-              <span className="text-blue-600">৳00</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Monthly Report Card */}
-        <div id="report-card-monthly" className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-indigo-500" />
-              MONTHLY REPORT
-            </h3>
-            <span className="text-3xs font-semibold bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full uppercase tracking-wider">
-              July 2026
-            </span>
-          </div>
-          <div className="space-y-2.5 text-sm">
-            <div className="flex justify-between"><span className="text-slate-500">Sales Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Collection Amount</span><span className="font-semibold text-emerald-600">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Discount Amount</span><span className="font-semibold text-rose-500">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Purchased Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Service Charge</span><span className="font-semibold text-slate-800">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Payment Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
-            <div className="flex justify-between pt-2.5 border-t border-dashed border-slate-100 font-bold">
-              <span className="text-slate-700">Net Profit</span>
-              <span className="text-indigo-600">৳00</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Yearly Report Card */}
-        <div id="report-card-yearly" className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2">
-              <Award className="h-5 w-5 text-emerald-500" />
-              YEARLY REPORT
-            </h3>
-            <span className="text-3xs font-semibold bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full uppercase tracking-wider">
-              FY 2026
-            </span>
-          </div>
-          <div className="space-y-2.5 text-sm">
-            <div className="flex justify-between"><span className="text-slate-500">Sales Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Collection Amount</span><span className="font-semibold text-emerald-600">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Discount Amount</span><span className="font-semibold text-rose-500">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Purchased Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Service Charge</span><span className="font-semibold text-slate-800">৳000</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Payment Amount</span><span className="font-semibold text-slate-800">৳000</span></div>
-            <div className="flex justify-between pt-2.5 border-t border-dashed border-slate-100 font-bold">
-              <span className="text-slate-700">Net Profit</span>
-              <span className="text-emerald-600">৳00</span>
-            </div>
-          </div>
-        </div>
-
+        <ReportCard icon={<Clock className="h-5 w-5 text-blue-500" />} title="DAILY REPORT" date="Today (Jul 7)" />
+        <ReportCard icon={<TrendingUp className="h-5 w-5 text-amber-500" />} title="MONTHLY REPORT" date="July 2026" />
+        <ReportCard icon={<Award className="h-5 w-5 text-emerald-500" />} title="YEARLY REPORT" date="2026 Overview" />
       </div>
 
       {/* Remittance Holding Capacity & Vendor wise remittance */}
@@ -429,34 +358,12 @@ export default function DashboardOverview() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50/50 border border-emerald-100/60 flex flex-col justify-between">
-            <div>
-              <span className="text-4xs font-extrabold text-emerald-600 tracking-wider uppercase block">Hospital Bookings Value</span>
-              <span className="text-2xl font-black text-slate-800 block mt-1">৳{Math.max(145000, 2 * 10).toLocaleString()}</span>
-            </div>
-            <p className="text-4xs text-slate-400 font-medium mt-3">Direct corporate and personal healthcare treatment invoices</p>
-          </div>
+         
 
-          <div className="p-4 rounded-xl bg-gradient-to-br from-teal-50/60 to-cyan-50/40 border border-teal-100/60 flex flex-col justify-between">
-            <div>
-              <span className="text-4xs font-extrabold text-teal-600 tracking-wider uppercase block">Medical Agency Margin</span>
-              <span className="text-2xl font-black text-slate-800 block mt-1">৳{Math.max(20000, 2 * 10).toLocaleString()}</span>
-            </div>
-            <p className="text-4xs text-slate-400 font-medium mt-3">Welcare Trip premium commission & consultation margin</p>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
-            <div>
-              <span className="text-4xs font-bold text-slate-400 tracking-wider uppercase block">Treatment Destinations</span>
-              <div className="flex gap-1.5 mt-2 flex-wrap">
-                <span className="px-2 py-0.5 bg-white text-slate-600 text-3xs font-semibold rounded border border-slate-200">Singapore</span>
-                <span className="px-2 py-0.5 bg-white text-slate-600 text-3xs font-semibold rounded border border-slate-200">Thailand</span>
-                <span className="px-2 py-0.5 bg-white text-slate-600 text-3xs font-semibold rounded border border-slate-200">India</span>
-                <span className="px-2 py-0.5 bg-white text-slate-600 text-3xs font-semibold rounded border border-slate-200">Malaysia</span>
-              </div>
-            </div>
-            <p className="text-4xs text-slate-400 font-medium mt-3">Active hospitals: Mt Elizabeth, Bumrungrad, Apollo</p>
-          </div>
+          <TourismOverviewCard title={"Hospital Booking Value"} ammount={145000} description="Direct corporate and personal healthcare treatment invoices" />
+          <TourismOverviewCard title={"Medical Agency Margin"} ammount={20000} description="Welcare Trip premium commission & consultation margin" />
+          <TourismOverviewCard title={"Treatment Destinations"} list={[{ label: "Singapore", value: 1 }, { label: "Thailand", value: 2 }, { label: "India", value: 3 }]} description="Patients currently under treatment or consultation" />
+          
         </div>
 
         {/* Live appointments list */}
@@ -518,26 +425,13 @@ export default function DashboardOverview() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-          <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-            <p className="text-3xs text-slate-400 uppercase tracking-widest font-bold">Unpaid Ticket Issues</p>
-            <p className="text-base font-bold text-slate-800 mt-1">৳00</p>
-          </div>
-          <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-            <p className="text-3xs text-slate-400 uppercase tracking-widest font-bold">Unpaid Reissues</p>
-            <p className="text-base font-bold text-slate-800 mt-1">৳00</p>
-          </div>
-          <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
-            <p className="text-3xs text-slate-400 uppercase tracking-widest font-bold">Est. Net Commission</p>
-            <p className="text-base font-bold text-emerald-600 mt-1">৳22</p>
-          </div>
-          <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-            <p className="text-3xs text-blue-500 uppercase tracking-widest font-bold">Total BSP Payable</p>
-            <p className="text-base font-black text-blue-700 mt-1">৳333</p>
-          </div>
+          <BillingSummeryCard title="Unpaid Issues" amount={0} />
+          <BillingSummeryCard title="Unpaid Reissues" amount={0}  />
+          <BillingSummeryCard title="Est. Net Commission" amount={22}  />
+          <BillingSummeryCard title="Total BSP Payable" amount={333}  />
         </div>
       </div>
 
-      {/* Client Wise Sales List (from Page 1 screenshots) */}
       <div id="client-sales-container" className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-slate-800 text-sm tracking-tight uppercase flex items-center gap-1.5">

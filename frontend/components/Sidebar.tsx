@@ -1,53 +1,21 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  Plane, 
-  Coins, 
-  RefreshCw, 
-  Briefcase, 
-  Hotel, 
-  FileText, 
-  FileSpreadsheet,
-  Sparkles, 
-  User, 
-  Map,
-  DollarSign,
   HeartPulse
 } from 'lucide-react';
-import { paths } from '../routes/paths';
+import { siteMap } from '../routes/sitemap';
+import logo from '../assets/logo.png';
 
 export default function Sidebar() {
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, section: 'Core', path: paths.dashboard },
-    { id: 'employees', label: 'Employees', icon: User, section: 'Core', path: paths.employees },
-    { id: 'air-ticket', label: 'New Air Ticket', icon: Plane, section: 'Invoicing', path: paths.airTicketInvoice },
-    { id: 'non-commission', label: 'Non Commission', icon: Coins, section: 'Invoicing', path: paths.nonCommissionInvoice },
-    { id: 'reissue', label: 'Reissue Invoice', icon: RefreshCw, section: 'Invoicing', path: paths.reissueInvoice },
-    { id: 'tour-package', label: 'Holiday & Medical', icon: Briefcase, section: 'Packages', path: paths.tourPackageInvoice },
-    { id: 'hotel-visa', label: 'Hotel & Visa', icon: Hotel, section: 'Packages', path: paths.hotelVisaInvoice },
-    { id: 'ledger', label: 'Invoice Ledger', icon: FileText, section: 'Financials', path: paths.invoiceLedger },
-    { id: 'sales-report', label: 'Sales Spreadsheet', icon: FileSpreadsheet, section: 'Financials', path: paths.salesReport },
-    { id: 'ai-consultant', label: 'AI Consultant', icon: Sparkles, section: 'Intelligence', path: paths.aiConsultant },
-  ];
 
-  // Group items by section
   const sections = ['Core', 'Invoicing', 'Packages', 'Financials', 'Intelligence'];
 
   return (
     <aside id="sidebar-container" className="w-64 bg-[#0A1D1C] text-slate-300 flex flex-col border-r border-[#153432] h-screen shrink-0 overflow-y-auto">
-      {/* Brand Header */}
       <div id="sidebar-brand" className="px-6 py-5 border-b border-[#153432] flex items-center gap-3">
-        <div id="brand-logo-container" className="p-2 bg-emerald-600 rounded-lg text-white">
-          <HeartPulse className="h-6 w-6" id="brand-icon" />
-        </div>
-        <div>
-          <h1 id="brand-title" className="font-bold text-white text-base tracking-wide leading-tight">Welcare Trip</h1>
-          <span id="brand-subtitle" className="text-3xs text-emerald-400 font-bold uppercase tracking-wider">Travel & Medical ERP</span>
-        </div>
+       <img src={logo} alt="Welcare Trip ERP" className="h-8 w-auto" />
       </div>
 
-      {/* User Info Quick Card */}
       <div id="sidebar-user-card" className="p-4 mx-4 my-3 bg-[#153432]/40 rounded-xl border border-[#153432]/60 flex items-center gap-3">
         <div id="user-avatar" className="h-10 w-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
           WA
@@ -58,10 +26,9 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Nav Menu */}
       <nav id="sidebar-nav" className="flex-1 px-4 py-3 space-y-6">
         {sections.map((section) => {
-          const sectionItems = menuItems.filter(item => item.section === section);
+          const sectionItems = siteMap.filter(item => item.section === section);
           return (
             <div key={section} id={`section-group-${section.toLowerCase()}`} className="space-y-1">
               <h2 id={`section-header-${section.toLowerCase()}`} className="px-3 text-2xs uppercase tracking-widest font-bold text-emerald-500/50 mb-2">

@@ -6,7 +6,7 @@ import ErrorBoundaryFallback from '../components/common/errors/ErrorBoundaryFall
 
 const App = lazy(() => import('../App'));
 
-const DashboardOverview = lazy(() => import('../components/DashboardOverview'));
+const DashboardOverview = lazy(() => import('../pages/DashboardOverview'));
 const AiConsultant = lazy(() => import('../pages/AiConsultant'));
 const AirTicketInvoice = lazy(() => import('../pages/AirTicketInvoice'));
 const Employees = lazy(() => import('../pages/Employees'));
