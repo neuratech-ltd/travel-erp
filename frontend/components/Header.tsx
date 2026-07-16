@@ -41,7 +41,6 @@ export default function Header({ title, onSearch, onRefresh, isLoading = false }
         )}
       </div>
 
-      {/* Center Search Input */}
       <div id="header-search-bar" className="relative w-80 max-w-md hidden md:block">
         <span id="search-icon-wrapper" className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-4 w-4 text-slate-400" />
@@ -56,15 +55,12 @@ export default function Header({ title, onSearch, onRefresh, isLoading = false }
         />
       </div>
 
-      {/* Right Actions */}
       <div id="header-right-actions" className="flex items-center gap-4">
-        {/* System Time */}
         <div id="header-clock" className="flex items-center gap-1.5 text-xs text-slate-500 font-medium bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200/50">
           <Calendar className="h-3.5 w-3.5 text-slate-400" />
           <span>{dateTimeStr}</span>
         </div>
 
-        {/* Refresh Trigger */}
         <button
           id="header-refresh-btn"
           onClick={onRefresh}
@@ -74,7 +70,6 @@ export default function Header({ title, onSearch, onRefresh, isLoading = false }
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         </button>
 
-        {/* User Dropdown Profile mock */}
         <div id="header-profile-badge" className="flex items-center gap-2 border-l border-slate-200 pl-4">
           <div id="profile-avatar" className="h-9 w-9 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center font-bold text-slate-700 shadow-inner">
             <User className="h-4 w-4" />

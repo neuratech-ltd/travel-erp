@@ -223,7 +223,6 @@ export default function TourPackageInvoice() {
   return (
     <div id="tour-package-container" className="flex-1 p-8 bg-slate-50 overflow-y-auto space-y-6">
       
-      {/* Header Panel */}
       <div id="tour-header" className="bg-white p-6 rounded-2xl border border-slate-200/60 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <TitleCard 
           icon={<Briefcase className="h-5 w-5 text-emerald-500 animate-bounce" />}
