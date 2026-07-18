@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -12,6 +10,27 @@ datasource db {
   provider = "mongodb"
 }
 
+enum InvoiceType {
+  AIR_TICKET
+  NON_COMMISSION
+  REISSUE
+  TOUR_PACKAGE
+  HOTEL
+  VISA
+}
+
+enum InvoiceStatus {
+  DRAFT
+  UNPAID
+  PARTIAL
+  PAID
+  VOID
+}
+
+enum PaymentMethod {
+  CASH
+  BANK
+}
 
 model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -20,4 +39,107 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Client {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  email          String   @unique
+  passportNumber String?
+  phone          String?
+  address        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // one Client -> many Invoices (no FK field here — Prisma resolves it
+  // via the `clientId` field declared on the other side of the relation)
+  invoices       Invoice[]
+}
+
+model Employee {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  email      String   @unique
+  department String?
+  phone      String?
+  address    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  invoices   Invoice[] // invoices this employee sold
+}
+
+model Agent {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  commissionRate Float?
+  email          String   @unique
+  phone          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  invoices       Invoice[] // invoices referred by this agent
+}
+
+model Vendor {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  email          String   @unique
+  iataCode       String?
+  netOutstanding Float?   @default(0)
+  phone          String?
+  address        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  invoices       Invoice[] // invoices supplied by this vendor (airline/hotel)
+}
+
+model Invoice {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  invoiceNumber String        @unique
+  invoiceType   InvoiceType
+  amount        Float
+  status        InvoiceStatus @default(UNPAID)
+  salesDate     DateTime
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // --- Foreign keys: the ObjectId itself, stored on this model ---
+  clientId      String        @db.ObjectId
+  employeeId    String        @db.ObjectId   // renamed from salesBy: String
+  agentId       String?       @db.ObjectId   // optional — not every invoice has an agent
+  vendorId      String?       @db.ObjectId   // optional — Tour Package invoices may span vendors
+
+  // --- Relation fields: how Prisma actually resolves the join ---
+  client        Client        @relation(fields: [clientId], references: [id])
+  employee      Employee      @relation(fields: [employeeId], references: [id])
+  agent         Agent?        @relation(fields: [agentId], references: [id])
+  vendor        Vendor?       @relation(fields: [vendorId], references: [id])
+
+  // one Invoice -> many Payments
+  payments      Payment[]
+
+  @@index([clientId])
+  @@index([employeeId])
+  @@index([invoiceType, salesDate])
+  @@index([status])
+}
+
+model Payment {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  amount          Float
+  method          PaymentMethod
+  bankChannel     String?       // "Brac Bank" | "Pubali Bank" | "DBBL" — only when method = BANK
+  referenceNumber String?
+  paymentDate     DateTime
+  paymentStatus   String        @default("pending")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  invoiceId       String        @db.ObjectId
+  invoice         Invoice       @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+  @@index([paymentDate])
 }
