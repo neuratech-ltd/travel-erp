@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Briefcase, Sparkles, Save, User, Hotel, Plane, Ship, ShieldCheck, HeartPulse } from 'lucide-react';
-import { Invoice } from '../types';
+import { useState, useEffect } from 'react';
+import { Briefcase, Sparkles } from 'lucide-react';
 import TitleCard from '@/components/common/TitleCard';
 import TourPackageForm from '@/components/forms/TourPackageForm';
 
