@@ -1,32 +1,27 @@
-import { createBrowserRouter, type RouteObject } from 'react-router-dom';
-import { paths } from './paths';
-import { Suspense, lazy } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
-import ErrorBoundaryFallback from '../components/common/errors/ErrorBoundaryFallback';
+import { createBrowserRouter, type RouteObject } from 'react-router-dom'
+import { paths } from './paths'
+import { Suspense, lazy } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
+import ErrorBoundaryFallback from '../components/common/errors/ErrorBoundaryFallback'
+import Clients from '@/pages/Clients'
 
-const App = lazy(() => import('../App'));
+const App = lazy(() => import('../App'))
 
-const DashboardOverview = lazy(() => import('../pages/DashboardOverview'));
-const AiConsultant = lazy(() => import('../pages/AiConsultant'));
-const AirTicketInvoice = lazy(() => import('../pages/AirTicketInvoice'));
-const Employees = lazy(() => import('../pages/Employees'));
-const HotelVisaInvoice = lazy(() => import('../pages/HotelVisaInvoice'));
-const InvoiceLedger = lazy(() => import('../pages/InvoiceLedger'));
-const NonCommissionInvoice = lazy(() => import('../pages/NonCommissionInvoice'));
-const ReissueInvoice = lazy(() => import('../pages/ReissueInvoice'));
-const SalesReport = lazy(() => import('../pages/SalesReport'));
-const TourPackageInvoice = lazy(() => import('../pages/TourPackageInvoice'));
+const DashboardOverview = lazy(() => import('../pages/DashboardOverview'))
+const AiConsultant = lazy(() => import('../pages/AiConsultant'))
+const AirTicketInvoice = lazy(() => import('../pages/AirTicketInvoice'))
+const Employees = lazy(() => import('../pages/Employees'))
+const HotelVisaInvoice = lazy(() => import('../pages/HotelVisaInvoice'))
+const InvoiceLedger = lazy(() => import('../pages/InvoiceLedger'))
+const NonCommissionInvoice = lazy(() => import('../pages/NonCommissionInvoice'))
+const ReissueInvoice = lazy(() => import('../pages/ReissueInvoice'))
+const SalesReport = lazy(() => import('../pages/SalesReport'))
+const TourPackageInvoice = lazy(() => import('../pages/TourPackageInvoice'))
 
 export const routes: RouteObject[] = [
   {
     element: (
-      <Suspense
-        fallback={
-          <div className="flex justify-center items-center h-screen w-screen">
-            Loading...
-          </div>
-        }
-      >
+      <Suspense fallback={<div className="flex justify-center items-center h-screen w-screen">Loading...</div>}>
         <ErrorBoundary fallbackRender={ErrorBoundaryFallback}>
           <App />
         </ErrorBoundary>
@@ -48,6 +43,10 @@ export const routes: RouteObject[] = [
       {
         path: paths.employees,
         element: <Employees />,
+      },
+      {
+        path: paths.clients,
+        element: <Clients />,
       },
       {
         path: paths.hotelVisaInvoice,
@@ -75,10 +74,10 @@ export const routes: RouteObject[] = [
       },
     ],
   },
-];
+]
 
 const router = createBrowserRouter(routes, {
   basename: '/',
-});
+})
 
-export default router;
+export default router

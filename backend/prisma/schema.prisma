@@ -1,13 +1,20 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
+//
+// Aligned to the frontend's Invoice / SalesReportRow / Employee interfaces.
+// Nested Tour Package objects (passportInfo, ticketInfo, accommodation,
+// transport, visaInfo, medicalInfo, billing) are Prisma "composite types" —
+// MongoDB's native way to store embedded documents. They live inside the
+// Invoice document itself, not as separate collections, which matches how
+// your TS interface already nests them.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
 enum InvoiceType {
@@ -20,11 +27,9 @@ enum InvoiceType {
 }
 
 enum InvoiceStatus {
-  DRAFT
+  PAID
   UNPAID
   PARTIAL
-  PAID
-  VOID
 }
 
 enum PaymentMethod {
@@ -32,6 +37,14 @@ enum PaymentMethod {
   BANK
 }
 
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+/* ------------------------------------------------------------------ */
+/* AUTH                                                                */
+/* ------------------------------------------------------------------ */
 model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   email     String   @unique
@@ -41,6 +54,9 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+/* ------------------------------------------------------------------ */
+/* REFERENCE DATA                                                      */
+/* ------------------------------------------------------------------ */
 model Client {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
   name           String
@@ -51,22 +67,22 @@ model Client {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  // one Client -> many Invoices (no FK field here — Prisma resolves it
-  // via the `clientId` field declared on the other side of the relation)
   invoices       Invoice[]
 }
 
 model Employee {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  name       String
-  email      String   @unique
-  department String?
-  phone      String?
-  address    String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  email        String   @unique
+  designation  String?
+  department   String?
+  phone        String?
+  joiningDate  DateTime @default(now())
+  status       EmployeeStatus @default(ACTIVE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  invoices   Invoice[] // invoices this employee sold
+  invoicesSold Invoice[]
 }
 
 model Agent {
@@ -78,7 +94,7 @@ model Agent {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  invoices       Invoice[] // invoices referred by this agent
+  invoices       Invoice[]
 }
 
 model Vendor {
@@ -92,54 +108,222 @@ model Vendor {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  invoices       Invoice[] // invoices supplied by this vendor (airline/hotel)
+  invoices       Invoice[] // only populated where you've linked airline -> Vendor
 }
 
+/* ------------------------------------------------------------------ */
+/* COMPOSITE TYPES — embedded sub-documents, Tour Package only         */
+/* ------------------------------------------------------------------ */
+type PassportInfo {
+  passportNo    String?
+  paxName       String?
+  paxType       String?
+  nationalId    String?
+  contactNo     String?
+  email         String?
+  dob           DateTime?
+  dateOfIssue   DateTime?
+  dateOfExpiry  DateTime?
+}
+
+type TicketInfo {
+  ticketNo     String?
+  pnr          String?
+  route        String?
+  journeyDate  DateTime?
+  returnDate   DateTime?
+  airline      String?
+  salePrice    Float?
+  costPrice    Float?
+  profit       Float?
+  vendor       String?
+}
+
+type Accommodation {
+  hotelName     String?
+  hotelLocation String?
+  roomType      String?
+  checkIn       DateTime?
+  checkOut      DateTime?
+  nights        Int?
+  salePrice     Float?
+  costPrice     Float?
+  profit        Float?
+  vendor        String?
+}
+
+type Transport {
+  transportType String?
+  referenceNo   String?
+  description   String?
+  fromDate      DateTime?
+  toDate        DateTime?
+  pickupTime    String?
+  dropoffTime   String?
+  salePrice     Float?
+  costPrice     Float?
+  profit        Float?
+  vendor        String?
+}
+
+type VisaInfo {
+  visaCategory     String?
+  country          String?
+  visaType         String?
+  visaDeliveryDate DateTime?
+  visaNo           String?
+  salePrice        Float?
+  costPrice        Float?
+  profit           Float?
+}
+
+type MedicalInfo {
+  hospitalName      String?
+  doctorName        String?
+  appointmentDate   DateTime?
+  treatmentCategory String?
+  companionName     String?
+  ambulanceRequired Boolean?
+  treatmentCost     Float?
+  salePrice         Float?
+  costPrice         Float?
+  profit            Float?
+}
+
+type Billing {
+  unitPrice       Float?
+  costPrice       Float?
+  billingQty      Int?
+  discount        Float?
+  extraFee        Float?
+  totalCost       Float?
+  totalProfit     Float?
+  subTotal        Float?
+  netTotal        Float?
+  agentCommission Float?
+}
+
+/* ------------------------------------------------------------------ */
+/* INVOICE — mirrors the frontend Invoice interface field-for-field    */
+/* ------------------------------------------------------------------ */
 model Invoice {
-  id            String        @id @default(auto()) @map("_id") @db.ObjectId
-  invoiceNumber String        @unique
-  invoiceType   InvoiceType
-  amount        Float
-  status        InvoiceStatus @default(UNPAID)
-  salesDate     DateTime
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id         String        @id @default(auto()) @map("_id") @db.ObjectId
+  invoiceNo  String        @unique
+  status     InvoiceStatus @default(UNPAID)
+  type       InvoiceType
+  salesDate  DateTime
+  dueDate    DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 
-  // --- Foreign keys: the ObjectId itself, stored on this model ---
-  clientId      String        @db.ObjectId
-  employeeId    String        @db.ObjectId   // renamed from salesBy: String
-  agentId       String?       @db.ObjectId   // optional — not every invoice has an agent
-  vendorId      String?       @db.ObjectId   // optional — Tour Package invoices may span vendors
+  // relation FKs — replace clientName / salesBy strings from the TS interface
+  clientId   String        @db.ObjectId
+  client     Client        @relation(fields: [clientId], references: [id])
+  employeeId String        @db.ObjectId
+  employee   Employee      @relation(fields: [employeeId], references: [id])
+  agentId    String?       @db.ObjectId
+  agent      Agent?        @relation(fields: [agentId], references: [id])
+  vendorId   String?       @db.ObjectId   // set when `airline` below maps to a known Vendor
+  vendor     Vendor?       @relation(fields: [vendorId], references: [id])
 
-  // --- Relation fields: how Prisma actually resolves the join ---
-  client        Client        @relation(fields: [clientId], references: [id])
-  employee      Employee      @relation(fields: [employeeId], references: [id])
-  agent         Agent?        @relation(fields: [agentId], references: [id])
-  vendor        Vendor?       @relation(fields: [vendorId], references: [id])
+  // --- Flat ticket fields (Air Ticket / Non Commission / Reissue) ---
+  ticketNo     String?
+  paxName      String?
+  paxType      String?
+  passportNo   String?
+  contactNo    String?
+  email        String?
+  airline      String?      // free-text fallback; vendorId is the normalized link
+  route        String?
+  pnr          String?
+  journeyDate  DateTime?
+  returnDate   DateTime?
+  class        String?
+  segment      String?
 
-  // one Invoice -> many Payments
-  payments      Payment[]
+  // --- Flat financial fields ---
+  grossFare      Float?
+  baseFare       Float?
+  commissionPct  Float?
+  commission     Float?
+  tax            Float?
+  purchasePrice  Float?
+  clientPrice    Float?
+  netCommission  Float?
+  profit         Float?
+  vat            Float?
+  extraFee       Float?
+  discount       Float?
+
+  // --- Tour Package embedded sub-documents (composite types) ---
+  passportInfo   PassportInfo?
+  ticketInfo     TicketInfo?
+  accommodation  Accommodation?
+  transport      Transport?
+  visaInfo       VisaInfo?
+  medicalInfo    MedicalInfo?
+  billing        Billing?
+
+  payments       Payment[]
 
   @@index([clientId])
   @@index([employeeId])
-  @@index([invoiceType, salesDate])
+  @@index([type, salesDate])
   @@index([status])
 }
 
+/* ------------------------------------------------------------------ */
+/* PAYMENT — atomic receipts, optionally rolled up into SalesReportRow */
+/* ------------------------------------------------------------------ */
 model Payment {
-  id              String        @id @default(auto()) @map("_id") @db.ObjectId
-  amount          Float
-  method          PaymentMethod
-  bankChannel     String?       // "Brac Bank" | "Pubali Bank" | "DBBL" — only when method = BANK
-  referenceNumber String?
-  paymentDate     DateTime
-  paymentStatus   String        @default("pending")
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  amount        Float
+  method        PaymentMethod
+  bankChannel   String?       // "Brac Bank" | "Pubali Bank" | "DBBL"
+  receivedDate  DateTime
+  remarks       String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
-  invoiceId       String        @db.ObjectId
-  invoice         Invoice       @relation(fields: [invoiceId], references: [id])
+  invoiceId     String        @db.ObjectId
+  invoice       Invoice       @relation(fields: [invoiceId], references: [id])
 
   @@index([invoiceId])
-  @@index([paymentDate])
+  @@index([receivedDate])
+}
+
+/* ------------------------------------------------------------------ */
+/* SALES REPORT ROW — kept as its own model, matching your TS type     */
+/* exactly. Manually entered; not derived from Invoice/Payment.        */
+/* ------------------------------------------------------------------ */
+model SalesReportRow {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  date           DateTime
+  invoiceNo      String
+  ticketType     String    // "Int:" | "Domestic"
+  ticketCount    Int
+  mrNo           String?
+  salesRef       String?
+
+  ticketReissue  Float     @default(0)
+  admaVoidCharge Float     @default(0)
+  visaAppFee     Float     @default(0)
+  hotelBooking   Float     @default(0)
+  ticket         Float     @default(0)
+  totalSales     Float     // = sum of the five fields above, computed server-side
+
+  receivedDate   DateTime?
+  cash           Float     @default(0)
+  bankBrac       Float     @default(0)
+  bankPubali     Float     @default(0)
+  bankDbbl       Float     @default(0)
+  totalReceived  Float     // = sum of cash/bank fields, computed server-side
+  dueAmount      Float     // = totalSales - totalReceived, computed server-side
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([date])
+  @@index([invoiceNo])
+  @@index([salesRef])
 }
