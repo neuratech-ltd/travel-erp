@@ -11,8 +11,10 @@ export default function Clients() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [clients, setClients] = useState<Client[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedClientId, setSelectedClientId] = useState<string | undefined>(undefined)
 
   const handleEdit = (client: ClientColumnsProps) => {
+    setSelectedClientId(client.id)
     setIsEditModalOpen(true)
   }
 
@@ -82,7 +84,7 @@ export default function Clients() {
       <DataTable columns={columns} data={clients} />
 
       {isModalOpen && <AddClientModal setIsModalOpen={setIsModalOpen} />}
-      {isEditModalOpen && <EditClientModal setIsModalOpen={setIsEditModalOpen} />}
+      {isEditModalOpen && <EditClientModal id={selectedClientId} setIsModalOpen={setIsEditModalOpen} />}
     </div>
   )
 }

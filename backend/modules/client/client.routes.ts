@@ -1,11 +1,11 @@
-import express from 'express';
-import * as clientController from './client.controller.js'; 
+import express from 'express'
+import * as clientController from './client.controller.js'
 
+const router: express.Router = express.Router()
 
-const router: express.Router = express.Router();
+router.get('/', clientController.getClients)
+router.post('/', clientController.createClientController)
+router.get('/:id', clientController.getClientByIdController)
+router.put('/:id', clientController.updateClientController)
 
-router.get('/', clientController.getClients);
-router.post('/', clientController.createClientController);
-router.get('/:id', clientController.getClientByIdController);
-
-export default router; 
+export default router

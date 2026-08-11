@@ -14,7 +14,6 @@ export interface Client {
 const getAllClients = async () => {
   try {
     const clients = await prisma.client.findMany()
-    console.log('Fetched clients:', clients) // Log the fetched clients for debugging
     return clients
   } catch (error) {
     console.error('Error fetching clients:', error)
@@ -46,4 +45,17 @@ const createClient = async (clientData: Client) => {
   }
 }
 
-export { getAllClients, getClientById, createClient }
+const updateClient = async (id: string, clientData: Partial<Client>) => {
+  try {
+    const updatedClient = await prisma.client.update({
+      where: { id },
+      data: clientData,
+    })
+    return updatedClient
+  } catch (error) {
+    console.error('Error updating client:', error)
+    throw error
+  }
+}
+
+export { getAllClients, getClientById, createClient, updateClient }

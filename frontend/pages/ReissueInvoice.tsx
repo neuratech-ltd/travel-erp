@@ -1,127 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import { RefreshCw, Sparkles, Save } from 'lucide-react';
-import { Invoice } from '../types';
-import TitleCard from '@/components/common/TitleCard';
-import ReissueInvoiceForm from '@/components/forms/ReIssueInvoiceForm';
-
-
+import React, { useState, useEffect } from 'react'
+import { RefreshCw, Sparkles, Save } from 'lucide-react'
+import { Invoice } from '../types'
+import TitleCard from '@/components/common/TitleCard'
+import ReissueInvoiceForm from '@/components/forms/ReIssueInvoiceForm'
 
 export default function ReissueInvoice() {
-  const [loading, setLoading] = useState(false);
-  const [aiFilling, setAiFilling] = useState(false);
-  // const [employeesList, setEmployeesList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false)
+  const [employeesList, setEmployeesList] = useState<any[]>([])
+  const [clientsList, setClientsList] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  // useEffect(() => {
-  //   fetch('/api/employees')
-  //     .then(res => res.json())
-  //     .then(json => {
-  //       if (json.success) {
-  //         setEmployeesList(json.data);
-  //       }
-  //     })
-  //     .catch(err => console.error(err));
-  // }, []);
-
-  // Core metadata
-  // const [clientName, setClientName] = useState('Globe Trotter Agency');
-  // const [salesBy, setSalesBy] = useState('Select Employee');
-  // const [invoiceNo, setInvoiceNo] = useState(`ARI-00${Math.floor(Math.random() * 90) + 10}`);
-  // const [salesDate, setSalesDate] = useState('2026-07-06');
-  // const [dueDate, setDueDate] = useState('2026-07-20');
-
-  // // Reissue specifics
-  // const [ticketNo, setTicketNo] = useState('');
-  // const [airline, setAirline] = useState('Turkish Airlines');
-  // const [route, setRoute] = useState('');
-  // const [pnr, setPnr] = useState('');
-  // const [penalties, setPenalties] = useState<number>(0);
-  // const [fareDifference, setFareDifference] = useState<number>(0);
-  // const [taxDifference, setTaxDifference] = useState<number>(0);
-  // const [extraFee, setExtraFee] = useState<number>(0);
-  // const [discount, setDiscount] = useState<number>(0);
-
-  // Computed values
-    // const purchasePrice = Number(penalties) + Number(fareDifference) + Number(taxDifference);
-    // const clientPrice = purchasePrice + Number(extraFee) - Number(discount);
-    // const profit = Math.max(0, clientPrice - purchasePrice);
-
-  const triggerAiFill = async () => {
-    setAiFilling(true);
+  const fetchEmployees = async () => {
+    setIsLoading(true)
     try {
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: "Generate a flight reissue details for ticket reissue: penalties 2000, fare difference 2500, tax difference 500. Route DAC-IST-CDG on Turkish Airlines. Output a clean JSON block.",
-          contextType: "autoFill"
-        })
-      });
-      const data = await response.json();
-      if (data.success && data.text) {
-        const jsonMatch = data.text.match(/```json\n([\s\S]*?)\n```/) || data.text.match(/{[\s\S]*?}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
-          // setTicketNo(parsed.ticketNo || '074-123456789');
-          // setPenalties(parsed.penalties || 2000);
-          // setFareDifference(parsed.fareDifference || 2500);
-          // setTaxDifference(parsed.taxDifference || 500);
-          // setRoute(parsed.route || 'DAC-IST-CDG');
-          // setPnr(parsed.pnr || 'TKZ859');
-          // setAirline(parsed.airline || 'Turkish Airlines');
-        }
+      const response = await fetch('/api/employees')
+      const data = await response.json()
+      if (data.success) {
+        setEmployeesList(data.data)
       }
-    } catch (e) {
-      // setTicketNo('074-123456789');
-      // setPenalties(2000);
-      // setFareDifference(2500);
-      // setTaxDifference(500);
-      // setRoute('DAC-IST-CDG');
+    } catch (error) {
+      console.error('Failed to fetch employees:', error)
     } finally {
-      setAiFilling(false);
+      setIsLoading(false)
     }
-  };
+  }
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setLoading(true);
+  useEffect(() => {
+    fetchEmployees()
+  }, [])
 
-  //   const success = await onAddInvoice({
-  //     invoiceNo,
-  //     clientName,
-  //     salesBy,
-  //     salesDate,
-  //     dueDate,
-  //     type: 'Reissue',
-  //     status: 'Unpaid',
-  //     ticketNo,
-  //     paxName: 'Robert Johnson', // default matching list
-  //     airline,
-  //     route,
-  //     pnr,
-  //     purchasePrice,
-  //     clientPrice,
-  //     profit,
-  //     extraFee: Number(extraFee),
-  //     discount: Number(discount)
-  //   });
+  const fetchClients = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/clients')
+      const data = await response.json()
+      if (data.success) {
+        setClientsList(data.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch clients:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-  //   setLoading(false);
-  //   if (success) {
-  //     onNavigateToTab('ledger');
-  //   }
-  // };
+  useEffect(() => {
+    fetchClients()
+  }, [])
 
   return (
     <div id="reissue-invoice-container" className="flex-1 p-8 bg-slate-50 overflow-y-auto space-y-6">
-      
       {/* Header Panel */}
-      <div id="reissue-header" className="bg-white p-6 rounded-2xl border border-slate-200/60 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <TitleCard 
+      <div
+        id="reissue-header"
+        className="bg-white p-6 rounded-2xl border border-slate-200/60 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+      >
+        <TitleCard
           icon={<RefreshCw className="h-5 w-5 text-blue-500 animate-spin" />}
           title="CREATE TICKET REISSUE INVOICE"
           description="Re-calculates fare grids, computes airline penalties, and structures differences"
         />
-        <button
+        {/* <button
           type="button"
           onClick={triggerAiFill}
           disabled={aiFilling}
@@ -129,11 +68,10 @@ export default function ReissueInvoice() {
         >
           <Sparkles className="h-4 w-4" />
           {aiFilling ? 'Gemini Generating...' : 'AI Auto-Fill Form'}
-        </button>
+        </button> */}
       </div>
 
-    <ReissueInvoiceForm />
-
+      <ReissueInvoiceForm employeesList={employeesList} clientsList={clientsList} />
     </div>
-  );
+  )
 }

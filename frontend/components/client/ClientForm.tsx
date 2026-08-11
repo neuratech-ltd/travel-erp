@@ -3,9 +3,12 @@ import React, { useEffect } from 'react'
 interface ClientFormProps {
   setIsModalOpen: (isOpen: boolean) => void
 }
+interface ClientFormProps {
+  setIsModalOpen: (isOpen: boolean) => void
+  id?: string
+}
 
-const ClientForm = ({ setIsModalOpen }: ClientFormProps) => {
-  const [isLoading, setIsLoading] = React.useState(false)
+const ClientForm = ({ setIsModalOpen, id }: ClientFormProps) => {
   const [formData, setFormData] = React.useState({
     name: '',
     email: '',
@@ -13,6 +16,24 @@ const ClientForm = ({ setIsModalOpen }: ClientFormProps) => {
     phone: '',
     address: '',
   })
+
+  useEffect(() => {
+    if (!id) return
+    fetch(`/api/clients/${id}`)
+      .then((res) => res.json())
+      .then((json) => {
+        const client = json.data ?? json
+        setFormData({
+          name: client.name,
+          email: client.email,
+          passportNumber: client.passportNumber,
+          phone: client.phone,
+          address: client.address,
+        })
+      })
+  }, [id])
+
+  const [isLoading, setIsLoading] = React.useState(false)
 
   const addClient = async () => {
     try {
@@ -39,9 +60,38 @@ const ClientForm = ({ setIsModalOpen }: ClientFormProps) => {
     }
   }
 
+  const updateClient = async () => {
+    try {
+      setIsLoading(true)
+      const res = await fetch(`/api/clients/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          passportNumber: formData.passportNumber,
+          phone: formData.phone,
+          address: formData.address,
+        }),
+      })
+      const json = await res.json()
+      return json.data
+    } catch (e) {
+      console.error('Failed to update client', e)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    addClient()
+    if (id) {
+      updateClient()
+    } else {
+      addClient()
+    }
     setIsModalOpen(false)
   }
 
@@ -115,8 +165,7 @@ const ClientForm = ({ setIsModalOpen }: ClientFormProps) => {
           type="submit"
           className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-lg transition-colors cursor-pointer"
         >
-          {/* {editingEmployee ? 'SAVE DETAILS' : 'CREATE ACCOUNT'} */}
-          Add Client
+          {id ? 'Update Client' : 'Add Client'}
         </button>
         <button
           type="button"

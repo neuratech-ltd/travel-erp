@@ -4,9 +4,10 @@ import ClientForm from './ClientForm'
 
 interface EditClientModalProps {
   setIsModalOpen: (isOpen: boolean) => void
+  id?: string
 }
 
-const EditClientModal = ({ setIsModalOpen }: EditClientModalProps) => {
+const EditClientModal = ({ setIsModalOpen, id }: EditClientModalProps) => {
   return (
     <div>
       <div
@@ -29,7 +30,7 @@ const EditClientModal = ({ setIsModalOpen }: EditClientModalProps) => {
               <X className="h-4 w-4" />
             </button>
           </div>
-          <ClientForm setIsModalOpen={setIsModalOpen} />
+          <ClientForm id={id} setIsModalOpen={setIsModalOpen} />
         </div>
       </div>
     </div>

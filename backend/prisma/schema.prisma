@@ -42,9 +42,15 @@ enum EmployeeStatus {
   INACTIVE
 }
 
-/* ------------------------------------------------------------------ */
-/* AUTH                                                                */
-/* ------------------------------------------------------------------ */
+/**
+ * ------------------------------------------------------------------
+ */
+/**
+ * AUTH
+ */
+/**
+ * ------------------------------------------------------------------
+ */
 model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   email     String   @unique
@@ -54,9 +60,15 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
-/* ------------------------------------------------------------------ */
-/* REFERENCE DATA                                                      */
-/* ------------------------------------------------------------------ */
+/**
+ * ------------------------------------------------------------------
+ */
+/**
+ * REFERENCE DATA
+ */
+/**
+ * ------------------------------------------------------------------
+ */
 model Client {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
   name           String
@@ -67,20 +79,20 @@ model Client {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  invoices       Invoice[]
+  invoices Invoice[]
 }
 
 model Employee {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  name         String
-  email        String   @unique
-  designation  String?
-  department   String?
-  phone        String?
-  joiningDate  DateTime @default(now())
-  status       EmployeeStatus @default(ACTIVE)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  email       String         @unique
+  designation String?
+  department  String?
+  phone       String?
+  joiningDate DateTime       @default(now())
+  status      EmployeeStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   invoicesSold Invoice[]
 }
@@ -94,7 +106,7 @@ model Agent {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  invoices       Invoice[]
+  invoices Invoice[]
 }
 
 model Vendor {
@@ -108,35 +120,32 @@ model Vendor {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  invoices       Invoice[] // only populated where you've linked airline -> Vendor
+  invoices Invoice[]
 }
 
-/* ------------------------------------------------------------------ */
-/* COMPOSITE TYPES — embedded sub-documents, Tour Package only         */
-/* ------------------------------------------------------------------ */
 type PassportInfo {
-  passportNo    String?
-  paxName       String?
-  paxType       String?
-  nationalId    String?
-  contactNo     String?
-  email         String?
-  dob           DateTime?
-  dateOfIssue   DateTime?
-  dateOfExpiry  DateTime?
+  passportNo   String?
+  paxName      String?
+  paxType      String?
+  nationalId   String?
+  contactNo    String?
+  email        String?
+  dob          DateTime?
+  dateOfIssue  DateTime?
+  dateOfExpiry DateTime?
 }
 
 type TicketInfo {
-  ticketNo     String?
-  pnr          String?
-  route        String?
-  journeyDate  DateTime?
-  returnDate   DateTime?
-  airline      String?
-  salePrice    Float?
-  costPrice    Float?
-  profit       Float?
-  vendor       String?
+  ticketNo    String?
+  pnr         String?
+  route       String?
+  journeyDate DateTime?
+  returnDate  DateTime?
+  airline     String?
+  salePrice   Float?
+  costPrice   Float?
+  profit      Float?
+  vendor      String?
 }
 
 type Accommodation {
@@ -203,68 +212,65 @@ type Billing {
   agentCommission Float?
 }
 
-/* ------------------------------------------------------------------ */
-/* INVOICE — mirrors the frontend Invoice interface field-for-field    */
-/* ------------------------------------------------------------------ */
 model Invoice {
-  id         String        @id @default(auto()) @map("_id") @db.ObjectId
-  invoiceNo  String        @unique
-  status     InvoiceStatus @default(UNPAID)
-  type       InvoiceType
-  salesDate  DateTime
-  dueDate    DateTime?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  invoiceNo String        @unique
+  status    InvoiceStatus @default(UNPAID)
+  type      InvoiceType
+  salesDate DateTime
+  dueDate   DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   // relation FKs — replace clientName / salesBy strings from the TS interface
-  clientId   String        @db.ObjectId
-  client     Client        @relation(fields: [clientId], references: [id])
-  employeeId String        @db.ObjectId
-  employee   Employee      @relation(fields: [employeeId], references: [id])
-  agentId    String?       @db.ObjectId
-  agent      Agent?        @relation(fields: [agentId], references: [id])
-  vendorId   String?       @db.ObjectId   // set when `airline` below maps to a known Vendor
-  vendor     Vendor?       @relation(fields: [vendorId], references: [id])
+  clientId   String   @db.ObjectId
+  client     Client   @relation(fields: [clientId], references: [id])
+  employeeId String   @db.ObjectId
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  agentId    String?  @db.ObjectId
+  agent      Agent?   @relation(fields: [agentId], references: [id])
+  vendorId   String?  @db.ObjectId // set when `airline` below maps to a known Vendor
+  vendor     Vendor?  @relation(fields: [vendorId], references: [id])
 
   // --- Flat ticket fields (Air Ticket / Non Commission / Reissue) ---
-  ticketNo     String?
-  paxName      String?
-  paxType      String?
-  passportNo   String?
-  contactNo    String?
-  email        String?
-  airline      String?      // free-text fallback; vendorId is the normalized link
-  route        String?
-  pnr          String?
-  journeyDate  DateTime?
-  returnDate   DateTime?
-  class        String?
-  segment      String?
+  ticketNo    String?
+  paxName     String?
+  paxType     String?
+  passportNo  String?
+  contactNo   String?
+  email       String?
+  airline     String? // free-text fallback; vendorId is the normalized link
+  route       String?
+  pnr         String?
+  journeyDate DateTime?
+  returnDate  DateTime?
+  class       String?
+  segment     String?
 
   // --- Flat financial fields ---
-  grossFare      Float?
-  baseFare       Float?
-  commissionPct  Float?
-  commission     Float?
-  tax            Float?
-  purchasePrice  Float?
-  clientPrice    Float?
-  netCommission  Float?
-  profit         Float?
-  vat            Float?
-  extraFee       Float?
-  discount       Float?
+  grossFare     Float?
+  baseFare      Float?
+  commissionPct Float?
+  commission    Float?
+  tax           Float?
+  purchasePrice Float?
+  clientPrice   Float?
+  netCommission Float?
+  profit        Float?
+  vat           Float?
+  extraFee      Float?
+  discount      Float?
 
   // --- Tour Package embedded sub-documents (composite types) ---
-  passportInfo   PassportInfo?
-  ticketInfo     TicketInfo?
-  accommodation  Accommodation?
-  transport      Transport?
-  visaInfo       VisaInfo?
-  medicalInfo    MedicalInfo?
-  billing        Billing?
+  passportInfo  PassportInfo?
+  ticketInfo    TicketInfo?
+  accommodation Accommodation?
+  transport     Transport?
+  visaInfo      VisaInfo?
+  medicalInfo   MedicalInfo?
+  billing       Billing?
 
-  payments       Payment[]
+  payments Payment[]
 
   @@index([clientId])
   @@index([employeeId])
@@ -272,56 +278,70 @@ model Invoice {
   @@index([status])
 }
 
-/* ------------------------------------------------------------------ */
-/* PAYMENT — atomic receipts, optionally rolled up into SalesReportRow */
-/* ------------------------------------------------------------------ */
+/**
+ * ------------------------------------------------------------------
+ */
+/**
+ * PAYMENT — atomic receipts, optionally rolled up into SalesReportRow
+ */
+/**
+ * ------------------------------------------------------------------
+ */
 model Payment {
-  id            String        @id @default(auto()) @map("_id") @db.ObjectId
-  amount        Float
-  method        PaymentMethod
-  bankChannel   String?       // "Brac Bank" | "Pubali Bank" | "DBBL"
-  receivedDate  DateTime
-  remarks       String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  amount       Float
+  method       PaymentMethod
+  bankChannel  String? // e.g. "BRAC", "Pubali", "DBBL"
+  receivedDate DateTime
+  remarks      String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
-  invoiceId     String        @db.ObjectId
-  invoice       Invoice       @relation(fields: [invoiceId], references: [id])
+  invoiceId String  @db.ObjectId
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
 
   @@index([invoiceId])
   @@index([receivedDate])
 }
 
-/* ------------------------------------------------------------------ */
-/* SALES REPORT ROW — kept as its own model, matching your TS type     */
-/* exactly. Manually entered; not derived from Invoice/Payment.        */
-/* ------------------------------------------------------------------ */
+/**
+ * ------------------------------------------------------------------
+ */
+/**
+ * SALES REPORT ROW — kept as its own model, matching your TS type
+ */
+/**
+ * exactly. Manually entered; not derived from Invoice/Payment.
+ */
+/**
+ * ------------------------------------------------------------------
+ */
 model SalesReportRow {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
-  date           DateTime
-  invoiceNo      String
-  ticketType     String    // "Int:" | "Domestic"
-  ticketCount    Int
-  mrNo           String?
-  salesRef       String?
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  date        DateTime
+  invoiceNo   String
+  ticketType  String // "Int:" | "Domestic"
+  ticketCount Int
+  mrNo        String?
+  salesRef    String?
 
-  ticketReissue  Float     @default(0)
-  admaVoidCharge Float     @default(0)
-  visaAppFee     Float     @default(0)
-  hotelBooking   Float     @default(0)
-  ticket         Float     @default(0)
-  totalSales     Float     // = sum of the five fields above, computed server-side
+  ticketReissue  Float @default(0)
+  admaVoidCharge Float @default(0)
+  visaAppFee     Float @default(0)
+  hotelBooking   Float @default(0)
+  ticket         Float @default(0)
+  totalSales     Float // = sum of the five fields above, computed server-side
 
-  receivedDate   DateTime?
-  cash           Float     @default(0)
-  bankBrac       Float     @default(0)
-  bankPubali     Float     @default(0)
-  bankDbbl       Float     @default(0)
-  totalReceived  Float     // = sum of cash/bank fields, computed server-side
-  dueAmount      Float     // = totalSales - totalReceived, computed server-side
+  receivedDate  DateTime?
+  cash          Float     @default(0)
+  bankBrac      Float     @default(0)
+  bankPubali    Float     @default(0)
+  bankDbbl      Float     @default(0)
+  totalReceived Float // = sum of cash/bank fields, computed server-side
+  dueAmount     Float // = totalSales - totalReceived, computed server-side
 
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([date])
   @@index([invoiceNo])
