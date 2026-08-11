@@ -126,7 +126,6 @@ const HotelAndVisaForm = ({ bookingType, loading, employeesList, clientsList }: 
         onClose={() => setSuccessOpen(false)}
       />
 
-      {/* General */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200/60 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
         <div>
           <label className="block text-slate-500 font-bold mb-1">Search Client *</label>
@@ -286,7 +285,6 @@ const HotelAndVisaForm = ({ bookingType, loading, employeesList, clientsList }: 
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center justify-end gap-3 pb-8">
         <button
           type="button"
