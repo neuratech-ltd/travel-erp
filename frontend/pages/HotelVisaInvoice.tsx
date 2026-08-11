@@ -49,7 +49,7 @@ export default function HotelVisaInvoice() {
         <div className="flex gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
           <button
             type="button"
-            // onClick={() => setBookingType('Hotel')}
+            onClick={() => setBookingType('Hotel')}
             className={`px-4 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all 
           ${bookingType === 'Hotel' ? 'bg-white text-indigo-600 shadow' : 'text-slate-500 hover:text-slate-800'}`}
           >
@@ -57,7 +57,7 @@ export default function HotelVisaInvoice() {
           </button>
           <button
             type="button"
-            // onClick={() => setBookingType('Visa')}
+            onClick={() => setBookingType('Visa')}
             className={`px-4 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all 
           ${bookingType === 'Visa' ? 'bg-white text-indigo-600 shadow' : 'text-slate-500 hover:text-slate-800'}`}
           >
