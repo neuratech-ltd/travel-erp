@@ -21,7 +21,7 @@ export default function Header({ title, onSearch, onRefresh, isLoading = false }
         minute: '2-digit',
         second: '2-digit',
       })
-      setDateTimeStr(`July 10, 2026 - ${timePart} (UTC)`)
+      setDateTimeStr(`${now.toLocaleDateString('en-US')} - ${timePart} (UTC)`)
     }
 
     updateTimeStr()
