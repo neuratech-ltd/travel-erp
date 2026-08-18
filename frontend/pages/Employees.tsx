@@ -1,15 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { User, Plus, Search, CheckCircle, XCircle, RefreshCw } from 'lucide-react'
 import EmployeeStatsCard from '@/components/employee/EmployeeStatsCard'
-import EmployeeModal from '@/components/employee/EmployeeModal'
 import EmployeeCard from '@/components/employee/EmployeeCard'
 import { Employee } from '../../backend/modules/employee/employee.services'
+import AddEmployeeModal from '@/components/employee/AddEmployeeModal'
+import EditEmployeeModal from '@/components/employee/EditEmployeeModal'
 
 export default function Employees() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | undefined>(undefined)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+
+  const handleEditEmployee = (employee: Employee) => {
+    setSelectedEmployeeId(employee.id)
+    setIsEditModalOpen(true)
+  }
 
   const fetchEmployees = async () => {
     setIsLoading(true)
@@ -208,10 +216,15 @@ export default function Employees() {
             No employee records found. Click "ADD NEW EMPLOYEE" to create one.
           </div>
         ) : (
-          employees.map((emp) => <EmployeeCard key={emp.id} setIsModalOpen={setIsModalOpen} employee={emp} />)
+          employees.map((emp) => (
+            <EmployeeCard key={emp.id} setIsModalOpen={setIsEditModalOpen} onEdit={handleEditEmployee} employee={emp} />
+          ))
         )}
       </div>
-      {isModalOpen && <EmployeeModal setIsModalOpen={setIsModalOpen} />}
+      {isModalOpen && <AddEmployeeModal setIsModalOpen={setIsModalOpen} />}
+      {isEditModalOpen && selectedEmployeeId && (
+        <EditEmployeeModal id={selectedEmployeeId} setIsModalOpen={setIsEditModalOpen} />
+      )}
     </div>
   )
 }

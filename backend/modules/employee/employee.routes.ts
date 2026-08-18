@@ -1,11 +1,11 @@
-import express from 'express';
-import * as employeeController from './employee.controller.js'; 
+import express from 'express'
+import * as employeeController from './employee.controller.js'
 
+const router: express.Router = express.Router()
 
-const router: express.Router = express.Router();
+router.get('/', employeeController.getEmployees)
+router.post('/', employeeController.createEmployeeController)
+router.get('/:id', employeeController.getEmployeeByIdController)
+router.put('/:id', employeeController.updateEmployeeController)
 
-router.get('/', employeeController.getEmployees);
-router.post('/', employeeController.createEmployeeController);
-router.get('/:id', employeeController.getEmployeeByIdController);
-
-export default router; 
+export default router

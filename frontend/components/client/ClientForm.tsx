@@ -2,9 +2,6 @@ import React, { useEffect } from 'react'
 
 interface ClientFormProps {
   setIsModalOpen: (isOpen: boolean) => void
-}
-interface ClientFormProps {
-  setIsModalOpen: (isOpen: boolean) => void
   id?: string
 }
 
