@@ -4,6 +4,14 @@ import { Accommodation, Billing, InvoiceContact, MedicalInfo, PassportInfo, Tick
 
 interface ExpandedDetailsProps {
   inv: {
+    payments?: {
+      id: string
+      amount: number
+      method: 'CASH' | 'BANK'
+      bankChannel?: string
+      receivedDate: string
+      remarks?: string
+    }[]
     paxName?: string
     passportNo?: string
     passportInfo?: PassportInfo
@@ -219,6 +227,26 @@ const ExpandedDetails = ({ inv }: ExpandedDetailsProps) => {
                 </div>
               </div>
             )}
+
+            <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100/70 space-y-2">
+              <p className="font-bold text-blue-800 uppercase tracking-widest text-4xs">Payment Receipts</p>
+              {inv.payments?.length ? (
+                inv.payments.map((payment) => (
+                  <div
+                    key={payment.id}
+                    className="flex items-center justify-between border-b border-blue-100 pb-1 text-2xs"
+                  >
+                    <span className="text-slate-600">
+                      {new Date(payment.receivedDate).toLocaleDateString()} ·{' '}
+                      {payment.method === 'BANK' ? payment.bankChannel : 'Cash'}
+                    </span>
+                    <span className="font-bold text-blue-800">৳{payment.amount.toLocaleString()}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-2xs text-slate-500">No payment receipts recorded.</p>
+              )}
+            </div>
           </div>
         </div>
       </td>

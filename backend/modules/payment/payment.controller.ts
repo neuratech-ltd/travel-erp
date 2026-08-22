@@ -1,4 +1,4 @@
-import { getAllPayments, getPaymentById, createPayment, Payment } from './payment.services'
+import { getAllPayments, getPaymentById, createPayment, CreatePaymentInput } from './payment.services.js'
 
 const getPayments = async (req: any, res: any) => {
   try {
@@ -26,13 +26,15 @@ const getPaymentByIdController = async (req: any, res: any) => {
 }
 
 const createPaymentController = async (req: any, res: any) => {
-  const paymentData: Payment = req.body
+  const { invoiceId } = req.params
   try {
-    const newPayment = await createPayment(paymentData)
+    const newPayment = await createPayment(invoiceId, req.body as CreatePaymentInput)
     res.status(201).json({ success: true, data: newPayment })
   } catch (error) {
     console.error('Error in createPaymentController:', error)
-    res.status(500).json({ success: false, message: 'Failed to create payment' })
+    const message = error instanceof Error ? error.message : 'Failed to create payment'
+    const status = message === 'Invoice not found' ? 404 : 400
+    res.status(status).json({ success: false, message })
   }
 }
 
