@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { FileSpreadsheet, Printer, Download, Search, Building, MapPin, Info, RefreshCw } from 'lucide-react'
 import { SalesReportRow } from '../types'
+import { api } from '../lib/api'
 
 type DueFilter = 'All' | 'Has Due' | 'Cleared'
 
@@ -83,8 +84,7 @@ export default function SalesReport() {
   const fetchRows = async () => {
     setIsLoading(true)
     try {
-      const res = await fetch('/api/sales-reports')
-      const json = await res.json()
+      const { data: json } = await api.get('/sales-reports')
       if (json.success) {
         setRows(json.data)
       }

@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { User, Calendar, DollarSign } from 'lucide-react'
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '../ui/combobox'
 import SuccessPopup from '../common/SuccessPopup'
+import { api } from '../../lib/api'
 
 interface NonCommissionFormProps {
   employeesList: { id: number; name: string }[]
@@ -64,15 +65,8 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
   }, [successOpen])
 
   const createInvoice = async (invoiceData: any) => {
-    const response = await fetch('/api/invoices/non-commission', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(invoiceData),
-    })
-    const data = await response.json()
-    if (!response.ok || !data.success) {
+    const { data } = await api.post('/invoices/non-commission', invoiceData)
+    if (!data.success) {
       throw new Error(data.message || 'Failed to create invoice')
     }
 

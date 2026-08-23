@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { HeartPulse, User, Plane, Hotel, Ship, ShieldCheck, Save } from 'lucide-react'
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '../ui/combobox'
 import SuccessPopup from '../common/SuccessPopup'
+import { api } from '../../lib/api'
 
 interface TourPackageFormProps {
   loading: boolean
@@ -112,16 +113,8 @@ const TourPackageForm = ({ loading, employeesList, clientsList, subFormTab, setS
   }, [successOpen])
 
   const createInvoice = async (invoiceData: any) => {
-    const response = await fetch('/api/invoices/tour-package', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(invoiceData),
-    })
-
-    const data = await response.json()
-    if (!response.ok || !data.success) {
+    const { data } = await api.post('/invoices/tour-package', invoiceData)
+    if (!data.success) {
       throw new Error(data.message || 'Failed to create invoice')
     }
 

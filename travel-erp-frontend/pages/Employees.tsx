@@ -5,6 +5,7 @@ import EmployeeCard from '../components/employee/EmployeeCard'
 import { Employee } from '../../backend/modules/employee/employee.services'
 import AddEmployeeModal from '../components/employee/AddEmployeeModal'
 import EditEmployeeModal from '../components/employee/EditEmployeeModal'
+import { api } from '../lib/api'
 
 export default function Employees() {
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -22,8 +23,7 @@ export default function Employees() {
   const fetchEmployees = async () => {
     setIsLoading(true)
     try {
-      const res = await fetch('/api/employees')
-      const json = await res.json()
+      const { data: json } = await api.get('/employees')
       if (json.success) {
         setEmployees(json.data)
       }
@@ -70,8 +70,8 @@ export default function Employees() {
   // const handleDelete = async (id: string, name: string) => {
   //   if (confirm(`Are you sure you want to delete employee "${name}"?`)) {
   //     try {
-  //       const res = await fetch(`/api/employees/${id}`, { method: 'DELETE' });
-  //       const json = await res.json();
+  //       const res = await api.delete(`/employees/${id}`);
+  //       const json = res.data;
   //       if (json.success) {
   //         fetchEmployees();
   //       } else {
@@ -91,14 +91,10 @@ export default function Employees() {
   //   }
 
   //   try {
-  //     const url = editingEmployee ? `/api/employees/${editingEmployee.id}` : '/api/employees';
-  //     const method = editingEmployee ? 'PUT' : 'POST';
-  //     const res = await fetch(url, {
-  //       method,
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify(formData)
-  //     });
-  //     const json = await res.json();
+  //     const res = editingEmployee
+  //       ? await api.put(`/employees/${editingEmployee.id}`, formData)
+  //       : await api.post('/employees', formData);
+  //     const json = res.data;
   //     if (json.success) {
   //       fetchEmployees();
   //       setIsModalOpen(false);

@@ -1,5 +1,6 @@
 import React from 'react'
 import { useEffect } from 'react'
+import { api } from '../../lib/api'
 
 interface EmployeeFormProps {
   setIsModalOpen: (isOpen: boolean) => void
@@ -19,22 +20,21 @@ const EmployeeForm = ({ setIsModalOpen, id }: EmployeeFormProps) => {
 
   useEffect(() => {
     if (!id) return
-    fetch(`/api/employees/${id}`)
-      .then((res) => res.json())
-      .then((json) => {
-        const employee = json.data ?? json
-        setFormData({
-          name: employee.name ?? '',
-          email: employee.email ?? '',
-          designation: employee.designation ?? '',
-          department: employee.department ?? 'Sales & Marketing',
-          phone: employee.phone ?? '',
-          joiningDate: employee.joiningDate
-            ? new Date(employee.joiningDate).toISOString().split('T')[0]
-            : new Date().toISOString().split('T')[0],
-          status: employee.status ?? 'ACTIVE',
-        })
+    api.get(`/employees/${id}`).then((res) => {
+      const json = res.data
+      const employee = json.data ?? json
+      setFormData({
+        name: employee.name ?? '',
+        email: employee.email ?? '',
+        designation: employee.designation ?? '',
+        department: employee.department ?? 'Sales & Marketing',
+        phone: employee.phone ?? '',
+        joiningDate: employee.joiningDate
+          ? new Date(employee.joiningDate).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        status: employee.status ?? 'ACTIVE',
       })
+    })
   }, [id])
 
   const addEmployee = async () => {
@@ -46,19 +46,8 @@ const EmployeeForm = ({ setIsModalOpen, id }: EmployeeFormProps) => {
       joiningDate: formData.joiningDate ? new Date(formData.joiningDate).toISOString() : undefined,
     }
 
-    const res = await fetch('/api/employees', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
-
-    if (!res.ok) {
-      throw new Error('Failed to add employee')
-    }
-
-    return res.json()
+    const res = await api.post('/employees', payload)
+    return res.data
   }
 
   const updateEmployee = async () => {
@@ -70,17 +59,8 @@ const EmployeeForm = ({ setIsModalOpen, id }: EmployeeFormProps) => {
       joiningDate: formData.joiningDate ? new Date(formData.joiningDate).toISOString() : undefined,
     }
 
-    const res = await fetch(`/api/employees/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
-    if (!res.ok) {
-      throw new Error('Failed to update employee')
-    }
-    return res.json()
+    const res = await api.put(`/employees/${id}`, payload)
+    return res.data
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

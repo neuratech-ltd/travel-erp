@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Hotel } from 'lucide-react'
 import TitleCard from '../components/common/TitleCard'
 import HotelAndVisaForm from '../components/forms/HotelAndVisaForm'
+import { api } from '../lib/api'
 
 export default function HotelVisaInvoice() {
   const [loading, setLoading] = useState(true)
@@ -14,9 +15,9 @@ export default function HotelVisaInvoice() {
       setLoading(true)
 
       try {
-        const [employeesResponse, clientsResponse] = await Promise.all([fetch('/api/employees'), fetch('/api/clients')])
-        const employeesJson = await employeesResponse.json()
-        const clientsJson = await clientsResponse.json()
+        const [employeesResponse, clientsResponse] = await Promise.all([api.get('/employees'), api.get('/clients')])
+        const employeesJson = employeesResponse.data
+        const clientsJson = clientsResponse.data
 
         if (employeesJson.success) {
           setEmployeesList(employeesJson.data)

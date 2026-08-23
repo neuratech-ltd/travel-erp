@@ -5,6 +5,7 @@ import DataTable from '../components/client/DataTable'
 import { getClientColumns, ClientColumnsProps } from '../components/client/ClientColums'
 import AddClientModal from '../components/client/AddClientModal'
 import EditClientModal from '../components/client/EditClientModal'
+import { api } from '../lib/api'
 
 export default function Clients() {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -27,8 +28,7 @@ export default function Clients() {
   const fetchClients = async () => {
     try {
       setIsLoading(true)
-      const res = await fetch('/api/clients')
-      const json = await res.json()
+      const { data: json } = await api.get('/clients')
       setClients(json.data ?? [])
     } catch (e) {
       console.error('Failed to fetch clients', e)

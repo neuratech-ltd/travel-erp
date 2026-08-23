@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Search, Trash2, DollarSign, TrendingUp, Layers, ChevronDown, ChevronUp } from 'lucide-react'
 import { Invoice } from '../types'
 import ExpandedDetails from '../components/invoice/ExpandedDetails'
+import { api } from '../lib/api'
 
 export default function InvoiceLedger() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -20,11 +21,11 @@ export default function InvoiceLedger() {
 
   const loadInvoices = async () => {
     try {
-      const res = await fetch('/api/invoices')
+      const res = await api.get('/invoices')
 
       console.log('Invoice response status:', res.status)
 
-      const json = await res.json()
+      const json = res.data
 
       console.log('Invoice API DATA:', json)
 
@@ -50,29 +51,15 @@ export default function InvoiceLedger() {
     setIsSavingPayment(true)
     setPaymentError('')
     try {
-      const response = await fetch(`/api/payments/invoice/${paymentInvoice.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: Number(paymentAmount),
-          method: paymentMethod,
-          bankChannel: paymentMethod === 'BANK' ? bankChannel : undefined,
-          receivedDate,
-          remarks: paymentRemarks,
-        }),
+      const response = await api.post(`/payments/invoice/${paymentInvoice.id}`, {
+        amount: Number(paymentAmount),
+        method: paymentMethod,
+        bankChannel: paymentMethod === 'BANK' ? bankChannel : undefined,
+        receivedDate,
+        remarks: paymentRemarks,
       })
-      const responseText = await response.text()
-      let result: { message?: string } = {}
-      try {
-        result = JSON.parse(responseText)
-      } catch {
-        throw new Error(
-          response.ok
-            ? 'Payment API returned an invalid response. Restart the backend server and try again.'
-            : `Payment API is unavailable (${response.status}). Restart the backend server and try again.`,
-        )
-      }
-      if (!response.ok) throw new Error(result.message || 'Unable to record payment')
+      const result = response.data as { message?: string }
+      if (response.status < 200 || response.status >= 300) throw new Error(result.message || 'Unable to record payment')
       setPaymentInvoice(null)
       await loadInvoices()
     } catch (error) {

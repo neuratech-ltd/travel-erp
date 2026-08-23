@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { User, Calendar, DollarSign, Save } from 'lucide-react'
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '../ui/combobox'
 import SuccessPopup from '../common/SuccessPopup'
+import { api } from '../../lib/api'
 
 interface AirTicketInvoiceFormProps {
   employeesList: { id: number; name: string }[]
@@ -93,15 +94,8 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
   }, [successOpen])
 
   const createInvoice = async (invoiceData: any) => {
-    const response = await fetch('/api/invoices/air-ticket', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(invoiceData),
-    })
-    const data = await response.json()
-    if (!response.ok || !data.success) {
+    const { data } = await api.post('/invoices/air-ticket', invoiceData)
+    if (!data.success) {
       throw new Error(data.message || 'Failed to create invoice')
     }
 

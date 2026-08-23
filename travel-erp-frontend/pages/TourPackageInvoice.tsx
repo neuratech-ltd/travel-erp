@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Briefcase, Sparkles } from 'lucide-react'
 import TitleCard from '../components/common/TitleCard'
 import TourPackageForm from '../components/forms/TourPackageForm'
+import { api } from '../lib/api'
 
 export default function TourPackageInvoice() {
   const [subFormTab, setSubFormTab] = useState<
@@ -12,9 +13,10 @@ export default function TourPackageInvoice() {
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
   useEffect(() => {
-    fetch('/api/employees')
-      .then((res) => res.json())
-      .then((json) => {
+    api
+      .get('/employees')
+      .then((res) => {
+        const json = res.data
         if (json.success) {
           setEmployeesList(json.data)
         }
@@ -25,8 +27,7 @@ export default function TourPackageInvoice() {
   const fetchEmployees = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/employees')
-      const data = await response.json()
+      const { data } = await api.get('/employees')
       if (data.success) {
         setEmployeesList(data.data)
       }
@@ -44,8 +45,7 @@ export default function TourPackageInvoice() {
   const fetchClients = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/clients')
-      const data = await response.json()
+      const { data } = await api.get('/clients')
       if (data.success) {
         setClientsList(data.data)
       }

@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar'
 import Header from './components/Header'
 import { paths } from './routes/paths'
 import { Invoice, ReportStats } from './types'
+import { api } from './lib/api'
 
 // Shared data + handlers passed down to every routed page via useOutletContext()
 export interface WorkspaceContext {
@@ -43,15 +44,15 @@ export default function App() {
   // const fetchErpData = async () => {
   //   setIsLoading(true)
   //   try {
-  //     const invResponse = await fetch('/api/invoices')
-  //     const invData = await invResponse.json()
+  //     const invResponse = await api.get('/invoices')
+  //     const invData = invResponse.data
   //     if (invData.success) {
   //       setInvoices(invData.data)
   //     }
 
   //     // 2. Fetch Report Stats
-  //     const statsResponse = await fetch('/api/reports/stats')
-  //     const statsData = await statsResponse.json()
+  //     const statsResponse = await api.get('/reports/stats')
+  //     const statsData = statsResponse.data
   //     if (statsData.success) {
   //       setStats(statsData.data)
   //     }
@@ -70,15 +71,7 @@ export default function App() {
   const handleAddInvoice = async (newInvoiceData: Partial<Invoice>): Promise<boolean> => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/invoices', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newInvoiceData),
-      })
-
-      const resData = await response.json()
+      const { data: resData } = await api.post('/invoices', newInvoiceData)
       if (resData.success) {
         // Recalculate and pull latest state
         // await fetchErpData()
@@ -97,15 +90,7 @@ export default function App() {
   // Handler to update invoice payment status (triggers PATCH request)
   const handleUpdateStatus = async (id: string, status: 'Paid' | 'Unpaid' | 'Partial') => {
     try {
-      const response = await fetch(`/api/invoices/${id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status }),
-      })
-
-      const resData = await response.json()
+      const { data: resData } = await api.patch(`/invoices/${id}/status`, { status })
       // if (resData.success) {
       //   await fetchErpData()
       // }
@@ -117,11 +102,7 @@ export default function App() {
   // Handler to delete an invoice (triggers DELETE request)
   const handleDeleteInvoice = async (id: string) => {
     try {
-      const response = await fetch(`/api/invoices/${id}`, {
-        method: 'DELETE',
-      })
-
-      const resData = await response.json()
+      const { data: resData } = await api.delete(`/invoices/${id}`)
       // if (resData.success) {
       //   await fetchErpData()
       // }

@@ -3,6 +3,7 @@ import { Plane, Sparkles, Save, User, DollarSign, FileText, Calendar, HelpCircle
 import { Invoice, ReportStats } from '../types'
 import TitleCard from '../components/common/TitleCard'
 import AirTicketInvoiceForm from '../components/forms/AirTicketInvoiceForm'
+import { api } from '../lib/api'
 
 export default function AirTicketInvoice() {
   const [loading, setLoading] = useState(false)
@@ -14,8 +15,7 @@ export default function AirTicketInvoice() {
   const fetchEmployees = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/employees')
-      const data = await response.json()
+      const { data } = await api.get('/employees')
       if (data.success) {
         setEmployeesList(data.data)
       }
@@ -33,8 +33,7 @@ export default function AirTicketInvoice() {
   const fetchClients = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/clients')
-      const data = await response.json()
+      const { data } = await api.get('/clients')
       if (data.success) {
         setClientsList(data.data)
       }
@@ -53,15 +52,15 @@ export default function AirTicketInvoice() {
   //   setIsLoading(true);
   //   try {
   //     // 1. Fetch Invoices
-  //     const invResponse = await fetch('/api/invoices');
-  //     const invData = await invResponse.json();
+  //     const invResponse = await api.get('/invoices');
+  //     const invData = invResponse.data;
   //     if (invData.success) {
   //       setInvoices(invData.data);
   //     }
 
   //     // 2. Fetch Report Stats
-  //     const statsResponse = await fetch('/api/reports/stats');
-  //     const statsData = await statsResponse.json();
+  //     const statsResponse = await api.get('/reports/stats');
+  //     const statsData = statsResponse.data;
   //     if (statsData.success) {
   //       setStats(statsData.data);
   //     }
@@ -75,15 +74,9 @@ export default function AirTicketInvoice() {
   //  const handleAddInvoice = async (newInvoiceData: Partial<Invoice>): Promise<boolean> => {
   //   setIsLoading(true);
   //   try {
-  //     const response = await fetch('/api/invoices', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify(newInvoiceData),
-  //     });
+  //     const response = await api.post('/invoices', newInvoiceData);
 
-  //     const resData = await response.json();
+  //     const resData = response.data;
   //     if (resData.success) {
   //       // Recalculate and pull latest state
   //       await fetchErpData();

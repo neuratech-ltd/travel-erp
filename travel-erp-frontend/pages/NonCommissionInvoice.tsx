@@ -3,6 +3,7 @@ import { Coins, Sparkles, Save } from 'lucide-react'
 import { Invoice } from '../types'
 import TitleCard from '../components/common/TitleCard'
 import NonCommissionForm from '../components/forms/NonCommissionForm'
+import { api } from '../lib/api'
 
 export default function NonCommissionInvoice() {
   const [loading, setIsLoading] = useState(false)
@@ -12,8 +13,7 @@ export default function NonCommissionInvoice() {
   const fetchEmployees = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/employees')
-      const data = await response.json()
+      const { data } = await api.get('/employees')
       if (data.success) {
         setEmployeesList(data.data)
       }
@@ -31,8 +31,7 @@ export default function NonCommissionInvoice() {
   const fetchClients = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/clients')
-      const data = await response.json()
+      const { data } = await api.get('/clients')
       if (data.success) {
         setClientsList(data.data)
       }

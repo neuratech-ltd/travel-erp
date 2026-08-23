@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import { api } from '../../lib/api'
 
 interface ClientFormProps {
   setIsModalOpen: (isOpen: boolean) => void
@@ -16,18 +17,17 @@ const ClientForm = ({ setIsModalOpen, id }: ClientFormProps) => {
 
   useEffect(() => {
     if (!id) return
-    fetch(`/api/clients/${id}`)
-      .then((res) => res.json())
-      .then((json) => {
-        const client = json.data ?? json
-        setFormData({
-          name: client.name,
-          email: client.email,
-          passportNumber: client.passportNumber,
-          phone: client.phone,
-          address: client.address,
-        })
+    api.get(`/clients/${id}`).then((res) => {
+      const json = res.data
+      const client = json.data ?? json
+      setFormData({
+        name: client.name,
+        email: client.email,
+        passportNumber: client.passportNumber,
+        phone: client.phone,
+        address: client.address,
       })
+    })
   }, [id])
 
   const [isLoading, setIsLoading] = React.useState(false)
@@ -35,20 +35,14 @@ const ClientForm = ({ setIsModalOpen, id }: ClientFormProps) => {
   const addClient = async () => {
     try {
       setIsLoading(true)
-      const res = await fetch('/api/clients', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          passportNumber: formData.passportNumber,
-          phone: formData.phone,
-          address: formData.address,
-        }),
+      const res = await api.post('/clients', {
+        name: formData.name,
+        email: formData.email,
+        passportNumber: formData.passportNumber,
+        phone: formData.phone,
+        address: formData.address,
       })
-      const json = await res.json()
+      const json = res.data
       return json.data
     } catch (e) {
       console.error('Failed to add client', e)
@@ -60,20 +54,14 @@ const ClientForm = ({ setIsModalOpen, id }: ClientFormProps) => {
   const updateClient = async () => {
     try {
       setIsLoading(true)
-      const res = await fetch(`/api/clients/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          passportNumber: formData.passportNumber,
-          phone: formData.phone,
-          address: formData.address,
-        }),
+      const res = await api.put(`/clients/${id}`, {
+        name: formData.name,
+        email: formData.email,
+        passportNumber: formData.passportNumber,
+        phone: formData.phone,
+        address: formData.address,
       })
-      const json = await res.json()
+      const json = res.data
       return json.data
     } catch (e) {
       console.error('Failed to update client', e)

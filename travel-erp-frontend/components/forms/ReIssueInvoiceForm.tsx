@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { User, Calendar, DollarSign } from 'lucide-react'
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '../ui/combobox'
 import SuccessPopup from '../common/SuccessPopup'
+import { api } from '../../lib/api'
 
 interface ReIssueInvoiceFormProps {
   employeesList: { id: number; name: string }[]
@@ -46,17 +47,9 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
   const profit = useMemo(() => clientPrice - purchasePrice, [clientPrice, purchasePrice])
 
   const createInvoice = async (invoiceData: any) => {
-    const response = await fetch('/api/invoices/reissue', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(invoiceData),
-    })
+    const { data } = await api.post('/invoices/reissue', invoiceData)
 
-    const data = await response.json()
-
-    if (!response.ok || !data.success) {
+    if (!data.success) {
       throw new Error(data.message || 'Failed to create invoice')
     }
 

@@ -3,6 +3,7 @@ import { RefreshCw, Sparkles, Save } from 'lucide-react'
 import { Invoice } from '../types'
 import TitleCard from '../components/common/TitleCard'
 import ReissueInvoiceForm from '../components/forms/ReIssueInvoiceForm'
+import { api } from '../lib/api'
 
 export default function ReissueInvoice() {
   const [loading, setLoading] = useState(false)
@@ -13,8 +14,7 @@ export default function ReissueInvoice() {
   const fetchEmployees = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/employees')
-      const data = await response.json()
+      const { data } = await api.get('/employees')
       if (data.success) {
         setEmployeesList(data.data)
       }
@@ -32,8 +32,7 @@ export default function ReissueInvoice() {
   const fetchClients = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/clients')
-      const data = await response.json()
+      const { data } = await api.get('/clients')
       if (data.success) {
         setClientsList(data.data)
       }

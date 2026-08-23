@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { ShieldAlert, Hotel, Ship } from 'lucide-react'
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '../ui/combobox'
 import SuccessPopup from '../common/SuccessPopup'
+import { api } from '../../lib/api'
 
 interface HotelAndVisaFormProps {
   bookingType: 'Hotel' | 'Visa'
@@ -51,17 +52,9 @@ const HotelAndVisaForm = ({ bookingType, loading, employeesList, clientsList }: 
   }
 
   const createInvoice = async (invoiceData: Record<string, unknown>) => {
-    const response = await fetch('/api/invoices/hotel-visa', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(invoiceData),
-    })
+    const { data } = await api.post('/invoices/hotel-visa', invoiceData)
 
-    const data = await response.json()
-
-    if (!response.ok || !data.success) {
+    if (!data.success) {
       throw new Error(data.message || 'Failed to create invoice')
     }
 
