@@ -1,10 +1,15 @@
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-import {defineConfig} from 'vite';
+import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+import { defineConfig } from 'vite'
 
 export default defineConfig(() => {
   return {
+    preview: {
+      host: '0.0.0.0',
+      port: Number(process.env.PORT) || 4173,
+      allowedHosts: true as const,
+    },
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
@@ -22,5 +27,5 @@ export default defineConfig(() => {
         },
       },
     },
-  };
-});
+  }
+})
