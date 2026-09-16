@@ -57,11 +57,11 @@ const getAllReports = async () => {
   try {
     const invoices = await prisma.invoice.findMany({
       include: {
-        employee: true,
+        reference: true,
         payments: true,
       },
       orderBy: {
-        salesDate: "desc",
+        issueDate: "desc",
       },
     });
 
@@ -132,12 +132,12 @@ const getAllReports = async () => {
 
       return {
         id: invoice.id,
-        date: invoice.salesDate.toISOString(),
+        date: invoice.issueDate.toISOString(),
         invoiceNo: invoice.invoiceNo,
         ticketType: getTicketTypeLabel(invoice.type),
         ticketCount: invoice.billing?.billingQty ?? 1,
         mrNo: latestPayment?.remarks ?? "",
-        salesRef: invoice.employee?.name ?? "",
+        salesRef: invoice.reference?.name ?? "",
         ticketReissue,
         admaVoidCharge,
         visaAppFee,

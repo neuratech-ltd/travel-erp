@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Trash2, DollarSign, TrendingUp, Layers, ChevronDown, ChevronUp } from 'lucide-react'
+import { Search, Trash2, DollarSign, TrendingUp, Layers, ChevronDown, ChevronUp, Users, FileText } from 'lucide-react'
 import { Invoice } from '../types'
 import ExpandedDetails from '../components/invoice/ExpandedDetails'
+import InvoicePdfModal from '../components/invoice/InvoicePdfModal'
 import { api } from '../lib/api'
 
 export default function InvoiceLedger() {
@@ -18,17 +19,12 @@ export default function InvoiceLedger() {
   const [paymentRemarks, setPaymentRemarks] = useState('')
   const [paymentError, setPaymentError] = useState('')
   const [isSavingPayment, setIsSavingPayment] = useState(false)
+  const [pdfInvoice, setPdfInvoice] = useState<Invoice | null>(null)
 
   const loadInvoices = async () => {
     try {
       const res = await api.get('/invoices')
-
-      console.log('Invoice response status:', res.status)
-
       const json = res.data
-
-      console.log('Invoice API DATA:', json)
-
       setFetchInvoices(Array.isArray(json) ? json : (json.data ?? json.invoices ?? []))
     } catch (e) {
       console.error('Failed to fetch invoices', e)
@@ -68,11 +64,10 @@ export default function InvoiceLedger() {
       setIsSavingPayment(false)
     }
   }
+
   useEffect(() => {
     loadInvoices()
   }, [])
-
-  console.log('Fetched Invoices:', fetchInvoices)
 
   const getTypeBadgeStyles = (type: string) => {
     switch (type) {
@@ -106,6 +101,15 @@ export default function InvoiceLedger() {
     }
   }
 
+  // Ledger-wide quick stats — sum totalClientPrice / totalProfit across all loaded invoices
+  const ledgerTotals = fetchInvoices.reduce(
+    (acc, inv) => ({
+      sales: acc.sales + (inv.totalClientPrice ?? inv.billing?.netTotal ?? 0),
+      profit: acc.profit + (inv.totalProfit ?? inv.billing?.totalProfit ?? 0),
+    }),
+    { sales: 0, profit: 0 },
+  )
+
   return (
     <div id="invoice-ledger-container" className="flex-1 p-8 bg-slate-50 overflow-y-auto space-y-6">
       <div id="ledger-filters" className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm space-y-4">
@@ -119,15 +123,14 @@ export default function InvoiceLedger() {
               Browse, search, audit, or delete logged travel transactions
             </p>
           </div>
-          {/* Quick Stats overview */}
           <div className="flex gap-4 text-xs font-semibold text-slate-600">
             <div className="bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100 flex items-center gap-1.5">
               <DollarSign className="h-4 w-4 text-slate-400" />
-              Sales Total: <strong className="text-slate-800">৳ 000</strong>
+              Sales Total: <strong className="text-slate-800">৳{ledgerTotals.sales.toLocaleString()}</strong>
             </div>
             <div className="bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 flex items-center gap-1.5 text-emerald-700">
               <TrendingUp className="h-4 w-4 text-emerald-500" />
-              Profit Margin: <strong>৳ 000</strong>
+              Profit Margin: <strong>৳{ledgerTotals.profit.toLocaleString()}</strong>
             </div>
           </div>
         </div>
@@ -153,12 +156,12 @@ export default function InvoiceLedger() {
               className="w-full border border-slate-200 rounded-lg p-2 text-xs bg-slate-50 text-slate-700 outline-none"
             >
               <option value="All">All Booking Types</option>
-              <option value="Air Ticket">Air Ticket</option>
-              <option value="Non Commission">Non Commission</option>
-              <option value="Reissue">Reissue</option>
-              <option value="Tour Package">Tour Package</option>
-              <option value="Hotel">Hotel</option>
-              <option value="Visa">Visa</option>
+              <option value="AIR_TICKET">Air Ticket</option>
+              <option value="NON_COMMISSION">Non Commission</option>
+              <option value="REISSUE">Reissue</option>
+              <option value="TOUR_PACKAGE">Tour Package</option>
+              <option value="HOTEL">Hotel</option>
+              <option value="VISA">Visa</option>
             </select>
           </div>
 
@@ -169,9 +172,9 @@ export default function InvoiceLedger() {
               className="w-full border border-slate-200 rounded-lg p-2 text-xs bg-slate-50 text-slate-700 outline-none"
             >
               <option value="All">All Payment Statuses</option>
-              <option value="Paid">Paid</option>
-              <option value="Partial">Partial</option>
-              <option value="Unpaid">Unpaid</option>
+              <option value="PAID">Paid</option>
+              <option value="PARTIAL">Partial</option>
+              <option value="UNPAID">Unpaid</option>
             </select>
           </div>
 
@@ -200,7 +203,7 @@ export default function InvoiceLedger() {
                 <th className="py-4 px-6">Invoice No</th>
                 <th className="py-4 px-4">Client Name</th>
                 <th className="py-4 px-4">Booking Type</th>
-                <th className="py-4 px-4">Passenger Name</th>
+                <th className="py-4 px-4">Passenger(s)</th>
                 <th className="py-4 px-4">Route / Sector / Booking</th>
                 <th className="py-4 px-4 text-right">Revenue</th>
                 <th className="py-4 px-4 text-right">Profit</th>
@@ -210,12 +213,21 @@ export default function InvoiceLedger() {
             </thead>
             <tbody className="divide-y divide-slate-100 text-2xs text-slate-700">
               {fetchInvoices.map((inv: Invoice) => {
-                const revenue = inv.clientPrice || inv.billing?.netTotal || 0
-                const profitVal = inv.profit || inv.billing?.totalProfit || 0
+                const revenue = inv.totalClientPrice ?? inv.billing?.netTotal ?? 0
+                const profitVal = inv.totalProfit ?? inv.billing?.totalProfit ?? 0
                 const paidAmount = inv.payments?.reduce((sum, payment) => sum + payment.amount, 0) || 0
                 const dueAmount = Math.max(revenue - paidAmount, 0)
-                const displayRoute = inv.route || inv.ticketInfo?.route || 'Local Tour'
-                const displayPax = inv.paxName || inv.passportInfo?.paxName || 'Walk-In Customer'
+
+                const passengers = inv.passengers ?? []
+                const primaryPax = passengers[0]
+                const displayRoute =
+                  primaryPax?.route || inv.ticketInfo?.route || inv.accommodation?.hotelName || 'Local Tour'
+                const displayPax = passengers.length
+                  ? passengers.length === 1
+                    ? primaryPax?.paxName
+                    : `${primaryPax?.paxName} +${passengers.length - 1} more`
+                  : inv.passportInfo?.paxName || 'Walk-In Customer'
+
                 const isExpanded = expandedInvoiceId === inv.id
 
                 return (
@@ -243,7 +255,12 @@ export default function InvoiceLedger() {
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-4 font-medium text-slate-600">{displayPax}</td>
+                      <td className="py-3.5 px-4 font-medium text-slate-600">
+                        <span className="flex items-center gap-1">
+                          {passengers.length > 1 && <Users className="h-3.5 w-3.5 text-slate-400" />}
+                          {displayPax}
+                        </span>
+                      </td>
 
                       <td className="py-3.5 px-4 font-semibold text-slate-500 font-mono tracking-tight">
                         {displayRoute}
@@ -268,6 +285,13 @@ export default function InvoiceLedger() {
 
                       <td className="py-3.5 px-6 text-center">
                         <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => setPdfInvoice(inv)}
+                            className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                            title="View and print PDF invoice"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </button>
                           <button
                             onClick={() => openPaymentForm(inv)}
                             className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
@@ -298,13 +322,13 @@ export default function InvoiceLedger() {
                 )
               })}
 
-              {/* {filteredInvoices.length === 0 && (
+              {fetchInvoices.length === 0 && (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-slate-400 font-medium">
-                    {isLoading ? 'Fetching database logs...' : 'No invoices matched current query filter parameters.'}
+                    No invoices matched current query filter parameters.
                   </td>
                 </tr>
-              )} */}
+              )}
             </tbody>
           </table>
         </div>
@@ -393,6 +417,8 @@ export default function InvoiceLedger() {
           </form>
         </div>
       )}
+
+      {pdfInvoice && <InvoicePdfModal invoice={pdfInvoice} onClose={() => setPdfInvoice(null)} />}
     </div>
   )
 }

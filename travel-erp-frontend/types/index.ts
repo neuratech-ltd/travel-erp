@@ -10,6 +10,42 @@ export interface InvoiceContact {
   address?: string
 }
 
+// -----------------------------
+// Passenger (Air Ticket / Non-Commission / Reissue / Hotel / Visa)
+// -----------------------------
+export interface Passenger {
+  paxName: string
+  paxType?: string
+  passportNo?: string
+  contactNo?: string
+  email?: string
+
+  dob?: string
+  passportIssueDate?: string
+  passportExpiryDate?: string
+
+  ticketNo?: string
+  pnr?: string
+  route?: string
+  class?: string
+  segment?: string
+  journeyDate?: string
+  returnDate?: string
+  ticketingRemarks?: string
+
+  baseFare?: number
+  taxesCommission?: number
+  aitTax?: number
+  commissionPct?: number
+  calculatedCommission?: number
+  purchaseCost?: number
+  netCommission?: number
+  clientPrice?: number
+  discount?: number
+  extraFee?: number
+  profit?: number
+}
+
 export interface Invoice {
   id: string
 
@@ -18,8 +54,7 @@ export interface Invoice {
   type: InvoiceType
   status: InvoiceStatus
 
-  salesDate: string
-  dueDate?: string
+  issueDate: string // renamed from salesDate; dueDate removed entirely
 
   createdAt?: string
   updatedAt?: string
@@ -28,11 +63,10 @@ export interface Invoice {
   clientId: string
   client?: InvoiceContact
 
-  employeeId: string
-  employee?: InvoiceContact
+  referenceId: string // renamed from employeeId
+  reference?: InvoiceContact // renamed from employee
 
-  agentId?: string
-  agent?: InvoiceContact
+  // Agent removed entirely
 
   vendorId?: string
   vendor?: {
@@ -41,63 +75,25 @@ export interface Invoice {
     email?: string
   }
 
-  // -----------------------------
-  // Flat Ticket Information
-  // -----------------------------
-
-  ticketNo?: string
-
-  paxName?: string
-
-  paxType?: string
-
-  passportNo?: string
-
-  contactNo?: string
-
-  email?: string
-
   airline?: string
 
-  route?: string
-
-  pnr?: string
-
-  journeyDate?: string
-
-  returnDate?: string
-
-  class?: string
-
-  segment?: string
+  // -----------------------------
+  // Passengers (Air Ticket / Non-Commission / Reissue / Hotel / Visa)
+  // -----------------------------
+  passengers?: Passenger[]
 
   // -----------------------------
-  // Financial Information
+  // Invoice-level rollups (sum of passengers[])
   // -----------------------------
-
-  grossFare?: number
-
-  baseFare?: number
-
-  commissionPct?: number
-
-  commission?: number
-
-  tax?: number
-
-  purchasePrice?: number
-
-  clientPrice?: number
-
-  netCommission?: number
-
-  profit?: number
-
-  vat?: number
-
-  extraFee?: number
-
-  discount?: number
+  totalBaseFare?: number
+  totalTaxesCommission?: number
+  totalAitTax?: number
+  totalCommission?: number
+  totalPurchaseCost?: number
+  totalClientPrice?: number
+  totalDiscount?: number
+  totalExtraFee?: number
+  totalProfit?: number
 
   // -----------------------------
   // Tour Package Composite Types

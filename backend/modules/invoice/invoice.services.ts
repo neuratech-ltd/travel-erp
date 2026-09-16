@@ -1,5 +1,7 @@
 import { prisma } from "../../lib/prisma.js";
 import { InvoiceStatus, InvoiceType } from "@prisma/client";
+import { generateInvoiceNo } from "./invoice-number.js";
+import { assertValidPnr, assertPnrsUnique } from "./invoice.validators.js";
 
 type DateLike = string | Date | null | undefined;
 type NumericLike = string | number | null | undefined;
@@ -10,52 +12,68 @@ interface InvoiceContactInput {
   email?: string;
 }
 
+// ---------------------------------------------------------------
+// SHARED BASE INPUTS
+// ---------------------------------------------------------------
 interface BaseInvoiceInputs {
   clientId?: string;
   client?: InvoiceContactInput | string;
   clientName?: string;
   clientEmail?: string;
-  employeeId?: string;
-  employee?: InvoiceContactInput | string;
-  salesBy?: InvoiceContactInput | string;
-  salesByEmail?: string;
-  agentId?: string;
-  agent?: InvoiceContactInput | string;
-  agentEmail?: string;
-  invoiceNumber: string;
-  salesDate: DateLike;
-  dueDate?: DateLike;
+  referenceId?: string;
+  reference?: InvoiceContactInput | string;
+  referenceEmail?: string;
+  issueDate: DateLike;
   status?: InvoiceStatus | "PAID" | "UNPAID" | "PARTIAL";
 }
 
-interface AirTicketInputs extends BaseInvoiceInputs {
-  ticketNumber: string;
-  baseFare: NumericLike;
-  taxesCommission: NumericLike;
-  clientPrice: NumericLike;
-  commission: NumericLike;
-  calculatedCommission: NumericLike;
-  purchaseCost: NumericLike;
-  netCommission: NumericLike;
-  discount: NumericLike;
-  serviceCharge: NumericLike;
-  calculatedProfit: NumericLike;
-  airline: string;
-  route: string;
+// ---------------------------------------------------------------
+// PASSENGER INPUT (shared shape for Air Ticket / Non-Commission / Reissue)
+// ---------------------------------------------------------------
+interface PassengerInput {
+  paxName: string;
+  paxType?: string;
+  passportNo?: string;
+  contactNo?: string;
+  email?: string;
+  dob?: DateLike;
+  passportIssueDate?: DateLike;
+  passportExpiryDate?: DateLike;
+
+  ticketNo?: string;
   pnr: string;
-  class: string;
-  passengerName: string;
-  passengerType: string;
-  passportNumber: string;
-  contactNumber: string;
-  passengerEmail: string;
-  dateOfBirth: DateLike;
-  passportIssueDate: DateLike;
-  passportExpiryDate: DateLike;
-  journeyDate: DateLike;
-  returnDate: DateLike;
-  travelSegmnets: string;
-  ticketingRemarks: string;
+  route?: string;
+  class?: string;
+  segment?: string;
+  journeyDate?: DateLike;
+  returnDate?: DateLike;
+  ticketingRemarks?: string;
+
+  baseFare: NumericLike;
+  taxesCommission?: NumericLike;
+  aitTax?: NumericLike;
+  commissionPct?: NumericLike;
+  clientPrice: NumericLike;
+  discount?: NumericLike;
+  extraFee?: NumericLike;
+}
+
+interface AirTicketInputs extends BaseInvoiceInputs {
+  airline: string;
+  passengers: PassengerInput[];
+}
+
+interface NonCommissionInputs extends BaseInvoiceInputs {
+  airline?: string;
+  passengers: PassengerInput[];
+}
+
+interface ReissueInputs extends BaseInvoiceInputs {
+  airline?: string;
+  passengers: PassengerInput[];
+  penalties?: NumericLike;
+  fareDifference?: NumericLike;
+  taxDifference?: NumericLike;
 }
 
 interface HotelVisaInputs extends BaseInvoiceInputs {
@@ -76,37 +94,6 @@ interface HotelVisaInputs extends BaseInvoiceInputs {
   profit?: NumericLike;
   extraFee?: NumericLike;
   discount?: NumericLike;
-}
-
-interface NonCommissionInputs extends BaseInvoiceInputs {
-  ticketNumber: string;
-  grossFare: NumericLike;
-  purchasePrice: NumericLike;
-  clientPrice: NumericLike;
-  extraFee?: NumericLike;
-  discount?: NumericLike;
-  paxName?: string;
-  route?: string;
-  pnr?: string;
-  airline?: string;
-  journeyDate?: DateLike;
-  returnDate?: DateLike;
-  passportNo?: string;
-  contactNo?: string;
-  email?: string;
-}
-
-interface ReissueInputs extends BaseInvoiceInputs {
-  ticketNumber: string;
-  penalties: NumericLike;
-  fareDifference: NumericLike;
-  taxDifference: NumericLike;
-  extraFee?: NumericLike;
-  discount?: NumericLike;
-  airline?: string;
-  route?: string;
-  pnr?: string;
-  paxName?: string;
 }
 
 interface TourPackageInputs extends BaseInvoiceInputs {
@@ -194,6 +181,9 @@ interface TourPackageInputs extends BaseInvoiceInputs {
   };
 }
 
+// ---------------------------------------------------------------
+// PRIMITIVE HELPERS
+// ---------------------------------------------------------------
 const toNumber = (value: NumericLike, fallback = 0) => {
   if (value === null || value === undefined || value === "") {
     return fallback;
@@ -221,17 +211,9 @@ const toStatus = (status?: BaseInvoiceInputs["status"]) => {
     return InvoiceStatus.UNPAID;
   }
 
-  if (status === "PAID") {
-    return InvoiceStatus.PAID;
-  }
-
-  if (status === "UNPAID") {
-    return InvoiceStatus.UNPAID;
-  }
-
-  if (status === "PARTIAL") {
-    return InvoiceStatus.PARTIAL;
-  }
+  if (status === "PAID") return InvoiceStatus.PAID;
+  if (status === "UNPAID") return InvoiceStatus.UNPAID;
+  if (status === "PARTIAL") return InvoiceStatus.PARTIAL;
 
   return status;
 };
@@ -258,6 +240,9 @@ const normalizeContactInput = (
   return value;
 };
 
+// ---------------------------------------------------------------
+// RESOLVE / CREATE REFERENCE DATA (Agent removed entirely)
+// ---------------------------------------------------------------
 const resolveOrCreateClient = async (client?: InvoiceContactInput) => {
   if (client?.id) {
     return client.id;
@@ -268,9 +253,7 @@ const resolveOrCreateClient = async (client?: InvoiceContactInput) => {
   }
 
   const existingClient = await prisma.client.findFirst({
-    where: {
-      name: client.name,
-    },
+    where: { name: client.name },
   });
 
   if (existingClient) {
@@ -295,13 +278,11 @@ const resolveOrCreateEmployee = async (employee?: InvoiceContactInput) => {
   }
 
   if (!employee?.name) {
-    throw new Error("Sales by employee name or employee id is required");
+    throw new Error("Reference employee name or id is required");
   }
 
   const existingEmployee = await prisma.employee.findFirst({
-    where: {
-      name: employee.name,
-    },
+    where: { name: employee.name },
   });
 
   if (existingEmployee) {
@@ -320,46 +301,13 @@ const resolveOrCreateEmployee = async (employee?: InvoiceContactInput) => {
   return createdEmployee.id;
 };
 
-const resolveOrCreateAgent = async (agent?: InvoiceContactInput) => {
-  if (!agent?.id && !agent?.name) {
-    return undefined;
-  }
-
-  if (agent.id) {
-    return agent.id;
-  }
-
-  const existingAgent = await prisma.agent.findFirst({
-    where: {
-      name: agent.name,
-    },
-  });
-
-  if (existingAgent) {
-    return existingAgent.id;
-  }
-
-  const createdAgent = await prisma.agent.create({
-    data: {
-      name: agent.name as string,
-      email:
-        agent.email ??
-        `${slugify(agent.name as string)}-${Date.now()}@travel-erp.local`,
-    },
-  });
-
-  return createdAgent.id;
-};
-
 const resolveOrCreateVendor = async (vendorName?: string) => {
   if (!vendorName) {
     return undefined;
   }
 
   const existingVendor = await prisma.vendor.findFirst({
-    where: {
-      name: vendorName,
-    },
+    where: { name: vendorName },
   });
 
   if (existingVendor) {
@@ -376,6 +324,9 @@ const resolveOrCreateVendor = async (vendorName?: string) => {
   return createdVendor.id;
 };
 
+// ---------------------------------------------------------------
+// CORE INVOICE DATA (invoiceNo auto-generated, no dueDate, issueDate)
+// ---------------------------------------------------------------
 const buildCoreInvoiceData = async (
   data: BaseInvoiceInputs,
   invoiceType: InvoiceType,
@@ -384,76 +335,196 @@ const buildCoreInvoiceData = async (
     data.client ?? data.clientName,
     data.clientEmail,
   );
-  const employeeRef = normalizeContactInput(
-    data.employee ?? data.salesBy,
-    data.salesByEmail,
+  const referenceRef = normalizeContactInput(
+    data.reference,
+    data.referenceEmail,
   );
-  const agentRef = normalizeContactInput(data.agent, data.agentEmail);
 
   const clientId = data.clientId ?? (await resolveOrCreateClient(clientRef));
-  const employeeId =
-    data.employeeId ?? (await resolveOrCreateEmployee(employeeRef));
-  const agentId = data.agentId ?? (await resolveOrCreateAgent(agentRef));
+  const referenceId =
+    data.referenceId ?? (await resolveOrCreateEmployee(referenceRef));
+
+  const invoiceNo = await generateInvoiceNo(invoiceType);
 
   return {
-    invoiceNo: data.invoiceNumber.trim(),
+    invoiceNo,
     type: invoiceType,
     status: toStatus(data.status),
-    salesDate: toDate(data.salesDate) ?? new Date(),
-    dueDate: toDate(data.dueDate),
+    issueDate: toDate(data.issueDate) ?? new Date(),
     clientId,
-    employeeId,
-    agentId,
+    referenceId,
   };
 };
 
+// ---------------------------------------------------------------
+// PASSENGER RECORD BUILDER + ROLLUPS
+// ---------------------------------------------------------------
+const buildPassengerRecord = (p: PassengerInput) => {
+  assertValidPnr(p.pnr);
+
+  const baseFare = toNumber(p.baseFare);
+  const taxesCommission = toNumber(p.taxesCommission);
+  const aitTax = toNumber(p.aitTax);
+  const commissionPct = toNumber(p.commissionPct);
+  const clientPrice = toNumber(p.clientPrice);
+  const discount = toNumber(p.discount);
+  const extraFee = toNumber(p.extraFee);
+
+  const calculatedCommission = Number(
+    ((baseFare * commissionPct) / 100).toFixed(2),
+  );
+  const purchaseCost = Number(
+    (baseFare + taxesCommission + aitTax - calculatedCommission).toFixed(2),
+  );
+  const netCommission = Number((calculatedCommission - extraFee).toFixed(2));
+  const profit = Number(
+    (clientPrice - purchaseCost - discount + extraFee).toFixed(2),
+  );
+
+  return {
+    paxName: p.paxName,
+    paxType: p.paxType,
+    passportNo: p.passportNo,
+    contactNo: p.contactNo,
+    email: p.email,
+    dob: toDate(p.dob),
+    passportIssueDate: toDate(p.passportIssueDate),
+    passportExpiryDate: toDate(p.passportExpiryDate),
+    ticketNo: p.ticketNo,
+    pnr: p.pnr,
+    route: p.route,
+    class: p.class,
+    segment: p.segment,
+    journeyDate: toDate(p.journeyDate),
+    returnDate: toDate(p.returnDate),
+    ticketingRemarks: p.ticketingRemarks,
+    baseFare,
+    taxesCommission,
+    aitTax,
+    commissionPct,
+    calculatedCommission,
+    purchaseCost,
+    netCommission,
+    clientPrice,
+    discount,
+    extraFee,
+    profit,
+  };
+};
+
+type PassengerRecord = ReturnType<typeof buildPassengerRecord>;
+
+const sumPassengerRollups = (passengers: PassengerRecord[]) =>
+  passengers.reduce(
+    (acc, p) => ({
+      totalBaseFare: acc.totalBaseFare + (p.baseFare ?? 0),
+      totalTaxesCommission: acc.totalTaxesCommission + (p.taxesCommission ?? 0),
+      totalAitTax: acc.totalAitTax + (p.aitTax ?? 0),
+      totalCommission: acc.totalCommission + (p.calculatedCommission ?? 0),
+      totalPurchaseCost: acc.totalPurchaseCost + (p.purchaseCost ?? 0),
+      totalClientPrice: acc.totalClientPrice + (p.clientPrice ?? 0),
+      totalDiscount: acc.totalDiscount + (p.discount ?? 0),
+      totalExtraFee: acc.totalExtraFee + (p.extraFee ?? 0),
+      totalProfit: acc.totalProfit + (p.profit ?? 0),
+    }),
+    {
+      totalBaseFare: 0,
+      totalTaxesCommission: 0,
+      totalAitTax: 0,
+      totalCommission: 0,
+      totalPurchaseCost: 0,
+      totalClientPrice: 0,
+      totalDiscount: 0,
+      totalExtraFee: 0,
+      totalProfit: 0,
+    },
+  );
+
+// ---------------------------------------------------------------
+// CREATE: AIR TICKET
+// ---------------------------------------------------------------
 export async function createAirTicketInvoice(data: AirTicketInputs) {
+  if (!data.passengers?.length) {
+    throw new Error("At least one passenger is required");
+  }
+
   const vendorId = await resolveOrCreateVendor(data.airline);
   const baseData = await buildCoreInvoiceData(data, InvoiceType.AIR_TICKET);
-  const grossFare = toNumber(data.clientPrice);
-  const baseFare = toNumber(data.baseFare);
-  const commissionPct = toNumber(data.commission);
-  const commissionAmount = toNumber(data.calculatedCommission);
-  const tax = toNumber(data.taxesCommission);
-  const purchasePrice = toNumber(data.purchaseCost);
-  const clientPrice = toNumber(data.clientPrice);
-  const netCommission = toNumber(data.netCommission);
-  const profit = toNumber(data.calculatedProfit);
-  const discount = toNumber(data.discount);
-  const extraFee = toNumber(data.serviceCharge);
+
+  await assertPnrsUnique(data.passengers.map((p) => p.pnr));
+  const passengers = data.passengers.map(buildPassengerRecord);
+  const totals = sumPassengerRollups(passengers);
 
   return prisma.invoice.create({
     data: {
       ...baseData,
       vendorId,
-      ticketNo: data.ticketNumber,
-      paxName: data.passengerName,
-      paxType: data.passengerType,
-      passportNo: data.passportNumber,
-      contactNo: data.contactNumber,
-      email: data.passengerEmail,
       airline: data.airline,
-      route: data.route,
-      pnr: data.pnr,
-      class: data.class,
-      journeyDate: toDate(data.journeyDate),
-      returnDate: toDate(data.returnDate),
-      segment: data.travelSegmnets,
-      grossFare,
-      baseFare,
-      commissionPct,
-      commission: commissionAmount,
-      tax,
-      purchasePrice,
-      clientPrice,
-      netCommission,
-      profit,
-      discount,
-      extraFee,
+      passengers,
+      ...totals,
     },
   });
 }
 
+// ---------------------------------------------------------------
+// CREATE: NON-COMMISSION
+// ---------------------------------------------------------------
+export async function createNonCommissionInvoice(data: NonCommissionInputs) {
+  if (!data.passengers?.length) {
+    throw new Error("At least one passenger is required");
+  }
+
+  const vendorId = data.airline
+    ? await resolveOrCreateVendor(data.airline)
+    : undefined;
+  const baseData = await buildCoreInvoiceData(data, InvoiceType.NON_COMMISSION);
+
+  await assertPnrsUnique(data.passengers.map((p) => p.pnr));
+  const passengers = data.passengers.map(buildPassengerRecord);
+  const totals = sumPassengerRollups(passengers);
+
+  return prisma.invoice.create({
+    data: {
+      ...baseData,
+      vendorId,
+      airline: data.airline,
+      passengers,
+      ...totals,
+    },
+  });
+}
+
+// ---------------------------------------------------------------
+// CREATE: REISSUE
+// ---------------------------------------------------------------
+export async function createReissueInvoice(data: ReissueInputs) {
+  if (!data.passengers?.length) {
+    throw new Error("At least one passenger is required");
+  }
+
+  const vendorId = data.airline
+    ? await resolveOrCreateVendor(data.airline)
+    : undefined;
+  const baseData = await buildCoreInvoiceData(data, InvoiceType.REISSUE);
+
+  await assertPnrsUnique(data.passengers.map((p) => p.pnr));
+  const passengers = data.passengers.map(buildPassengerRecord);
+  const totals = sumPassengerRollups(passengers);
+
+  return prisma.invoice.create({
+    data: {
+      ...baseData,
+      vendorId,
+      airline: data.airline,
+      passengers,
+      ...totals,
+    },
+  });
+}
+
+// ---------------------------------------------------------------
+// CREATE: HOTEL / VISA (unchanged shape, renames applied)
+// ---------------------------------------------------------------
 export async function createHotelVisaInvoice(data: HotelVisaInputs) {
   const baseData = await buildCoreInvoiceData(
     data,
@@ -485,92 +556,40 @@ export async function createHotelVisaInvoice(data: HotelVisaInputs) {
   return prisma.invoice.create({
     data: {
       ...baseData,
-      paxName: data.paxName,
-      route:
-        data.bookingType === "Hotel"
-          ? data.hotelName
-          : (data.route ??
-            (data.visaCountry ? `Visa: ${data.visaCountry}` : undefined)),
-      purchasePrice: purchasePriceValue,
-      clientPrice: clientPriceValue,
-      profit: profitValue,
-      extraFee: toNumber(data.extraFee),
-      discount: toNumber(data.discount),
-      // Preserve useful booking details in the free-text fields.
-      segment: data.bookingType === "Hotel" ? data.roomType : data.visaNo,
-      ticketNo: data.bookingType === "Visa" ? data.visaNo : undefined,
-      grossFare: clientPriceValue,
-      baseFare: purchasePriceValue,
+      passengers: data.paxName
+        ? [
+            {
+              paxName: data.paxName,
+              clientPrice: clientPriceValue,
+              purchaseCost: purchasePriceValue,
+              profit: profitValue,
+              extraFee: toNumber(data.extraFee),
+              discount: toNumber(data.discount),
+              pnr: undefined,
+              route:
+                data.bookingType === "Hotel"
+                  ? data.hotelName
+                  : (data.route ??
+                    (data.visaCountry
+                      ? `Visa: ${data.visaCountry}`
+                      : undefined)),
+              segment:
+                data.bookingType === "Hotel" ? data.roomType : data.visaNo,
+            },
+          ]
+        : undefined,
+      totalPurchaseCost: purchasePriceValue,
+      totalClientPrice: clientPriceValue,
+      totalProfit: profitValue,
+      totalExtraFee: toNumber(data.extraFee),
+      totalDiscount: toNumber(data.discount),
     },
   });
 }
 
-export async function createNonCommissionInvoice(data: NonCommissionInputs) {
-  const vendorId = data.airline
-    ? await resolveOrCreateVendor(data.airline)
-    : undefined;
-  const baseData = await buildCoreInvoiceData(data, InvoiceType.NON_COMMISSION);
-  const profit =
-    toNumber(data.clientPrice) -
-    toNumber(data.purchasePrice) +
-    toNumber(data.extraFee) -
-    toNumber(data.discount);
-
-  return prisma.invoice.create({
-    data: {
-      ...baseData,
-      vendorId,
-      ticketNo: data.ticketNumber,
-      paxName: data.paxName,
-      passportNo: data.passportNo,
-      contactNo: data.contactNo,
-      email: data.email,
-      airline: data.airline,
-      route: data.route,
-      pnr: data.pnr,
-      journeyDate: toDate(data.journeyDate),
-      returnDate: toDate(data.returnDate),
-      grossFare: toNumber(data.grossFare),
-      purchasePrice: toNumber(data.purchasePrice),
-      clientPrice: toNumber(data.clientPrice),
-      profit: toNumber(profit),
-      extraFee: toNumber(data.extraFee),
-      discount: toNumber(data.discount),
-    },
-  });
-}
-
-export async function createReissueInvoice(data: ReissueInputs) {
-  const vendorId = data.airline
-    ? await resolveOrCreateVendor(data.airline)
-    : undefined;
-  const baseData = await buildCoreInvoiceData(data, InvoiceType.REISSUE);
-  const purchasePrice =
-    toNumber(data.penalties) +
-    toNumber(data.fareDifference) +
-    toNumber(data.taxDifference);
-  const clientPrice =
-    purchasePrice + toNumber(data.extraFee) - toNumber(data.discount);
-  const profit = clientPrice - purchasePrice;
-
-  return prisma.invoice.create({
-    data: {
-      ...baseData,
-      vendorId,
-      ticketNo: data.ticketNumber,
-      paxName: data.paxName,
-      airline: data.airline,
-      route: data.route,
-      pnr: data.pnr,
-      purchasePrice,
-      clientPrice,
-      profit,
-      extraFee: toNumber(data.extraFee),
-      discount: toNumber(data.discount),
-    },
-  });
-}
-
+// ---------------------------------------------------------------
+// CREATE: TOUR PACKAGE (unchanged embedded structure, renames applied)
+// ---------------------------------------------------------------
 export async function createTourPackageInvoice(data: TourPackageInputs) {
   const baseData = await buildCoreInvoiceData(data, InvoiceType.TOUR_PACKAGE);
 
@@ -683,10 +702,6 @@ export async function createTourPackageInvoice(data: TourPackageInputs) {
       }
     : undefined;
 
-  const ticketNo = data.ticketInfo?.ticketNo ?? ticketInfo?.ticketNo;
-  const paxName = data.passportInfo?.paxName ?? passportInfo?.paxName;
-  const route = data.ticketInfo?.route ?? ticketInfo?.route;
-  const airline = data.ticketInfo?.airline ?? ticketInfo?.airline;
   const purchasePrice = billing?.totalCost ?? billing?.costPrice;
   const clientPrice = billing?.netTotal ?? billing?.subTotal;
   const profit =
@@ -698,6 +713,7 @@ export async function createTourPackageInvoice(data: TourPackageInputs) {
   return prisma.invoice.create({
     data: {
       ...baseData,
+      airline: ticketInfo?.airline,
       passportInfo,
       ticketInfo,
       accommodation,
@@ -705,34 +721,24 @@ export async function createTourPackageInvoice(data: TourPackageInputs) {
       visaInfo,
       medicalInfo,
       billing,
-      ticketNo,
-      paxName,
-      paxType: passportInfo?.paxType,
-      passportNo: passportInfo?.passportNo,
-      contactNo: passportInfo?.contactNo,
-      email: passportInfo?.email,
-      route,
-      airline,
-      journeyDate: ticketInfo?.journeyDate,
-      returnDate: ticketInfo?.returnDate,
-      purchasePrice:
-        purchasePrice === undefined ? undefined : toNumber(purchasePrice),
-      clientPrice:
-        clientPrice === undefined ? undefined : toNumber(clientPrice),
-      profit: profit === undefined ? undefined : toNumber(profit),
-      discount: billing?.discount,
-      extraFee: billing?.extraFee,
-      netCommission: billing?.agentCommission,
+      totalPurchaseCost:
+        purchasePrice === undefined ? 0 : toNumber(purchasePrice),
+      totalClientPrice: clientPrice === undefined ? 0 : toNumber(clientPrice),
+      totalProfit: profit === undefined ? 0 : toNumber(profit),
+      totalDiscount: billing?.discount ?? 0,
+      totalExtraFee: billing?.extraFee ?? 0,
     },
   });
 }
 
+// ---------------------------------------------------------------
+// READ
+// ---------------------------------------------------------------
 export const getAllInvoices = async () => {
   return prisma.invoice.findMany({
     include: {
       client: true,
-      employee: true,
-      agent: true,
+      reference: true,
       vendor: true,
       payments: true,
     },

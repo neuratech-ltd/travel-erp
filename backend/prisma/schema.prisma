@@ -26,6 +26,11 @@ enum InvoiceType {
   VISA
 }
 
+model Counter {
+  id    String @id @map("_id")
+  value Int    @default(0)
+}
+
 enum InvoiceStatus {
   PAID
   UNPAID
@@ -212,56 +217,67 @@ type Billing {
   agentCommission Float?
 }
 
+type Passenger {
+  paxName            String
+  paxType            String?
+  passportNo         String?
+  contactNo          String?
+  email              String?
+  dob                DateTime?
+  passportIssueDate  DateTime?
+  passportExpiryDate DateTime?
+
+  ticketNo         String?
+  pnr              String? // 6-digit, validated + uniqueness-checked in service layer
+  route            String?
+  class            String?
+  segment          String?
+  journeyDate      DateTime?
+  returnDate       DateTime?
+  ticketingRemarks String?
+
+  baseFare             Float?
+  taxesCommission      Float?
+  aitTax               Float? // renamed from airTax — Advance Income Tax
+  commissionPct        Float?
+  calculatedCommission Float?
+  purchaseCost         Float?
+  netCommission        Float?
+  clientPrice          Float?
+  discount             Float?
+  extraFee             Float?
+  profit               Float?
+}
+
 model Invoice {
   id        String        @id @default(auto()) @map("_id") @db.ObjectId
-  invoiceNo String        @unique
+  invoiceNo String        @unique // now system-generated, never client input
   status    InvoiceStatus @default(UNPAID)
   type      InvoiceType
-  salesDate DateTime
-  dueDate   DateTime?
+  issueDate DateTime // renamed from salesDate; dueDate removed entirely
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  // relation FKs — replace clientName / salesBy strings from the TS interface
-  clientId   String   @db.ObjectId
-  client     Client   @relation(fields: [clientId], references: [id])
-  employeeId String   @db.ObjectId
-  employee   Employee @relation(fields: [employeeId], references: [id])
-  agentId    String?  @db.ObjectId
-  agent      Agent?   @relation(fields: [agentId], references: [id])
-  vendorId   String?  @db.ObjectId // set when `airline` below maps to a known Vendor
-  vendor     Vendor?  @relation(fields: [vendorId], references: [id])
+  clientId    String   @db.ObjectId
+  client      Client   @relation(fields: [clientId], references: [id])
+  referenceId String   @db.ObjectId // renamed from employeeId
+  reference   Employee @relation(fields: [referenceId], references: [id]) // renamed from employee
+  vendorId    String?  @db.ObjectId
+  vendor      Vendor?  @relation(fields: [vendorId], references: [id])
 
-  // --- Flat ticket fields (Air Ticket / Non Commission / Reissue) ---
-  ticketNo    String?
-  paxName     String?
-  paxType     String?
-  passportNo  String?
-  contactNo   String?
-  email       String?
-  airline     String? // free-text fallback; vendorId is the normalized link
-  route       String?
-  pnr         String?
-  journeyDate DateTime?
-  returnDate  DateTime?
-  class       String?
-  segment     String?
+  airline    String?
+  passengers Passenger[]
 
-  // --- Flat financial fields ---
-  grossFare     Float?
-  baseFare      Float?
-  commissionPct Float?
-  commission    Float?
-  tax           Float?
-  purchasePrice Float?
-  clientPrice   Float?
-  netCommission Float?
-  profit        Float?
-  vat           Float?
-  extraFee      Float?
-  discount      Float?
+  totalBaseFare        Float @default(0)
+  totalTaxesCommission Float @default(0)
+  totalAitTax          Float @default(0)
+  totalCommission      Float @default(0)
+  totalPurchaseCost    Float @default(0)
+  totalClientPrice     Float @default(0)
+  totalDiscount        Float @default(0)
+  totalExtraFee        Float @default(0)
+  totalProfit          Float @default(0)
 
-  // --- Tour Package embedded sub-documents (composite types) ---
   passportInfo  PassportInfo?
   ticketInfo    TicketInfo?
   accommodation Accommodation?
@@ -271,10 +287,12 @@ model Invoice {
   billing       Billing?
 
   payments Payment[]
+  agent    Agent?    @relation(fields: [agentId], references: [id])
+  agentId  String?   @db.ObjectId
 
   @@index([clientId])
-  @@index([employeeId])
-  @@index([type, salesDate])
+  @@index([referenceId])
+  @@index([type, issueDate])
   @@index([status])
 }
 

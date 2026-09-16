@@ -21,36 +21,19 @@ const monthLabel = [
 ]
 
 const toDate = (value?: string) => {
-  if (!value) {
-    return null
-  }
-
+  if (!value) return null
   const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) {
-    return null
-  }
-
-  return parsed
+  return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
 const formatDate = (value?: string) => {
   const parsed = toDate(value)
-  if (!parsed) {
-    return '-'
-  }
-
-  return parsed.toLocaleDateString('en-GB')
+  return parsed ? parsed.toLocaleDateString('en-GB') : '-'
 }
 
 const formatMonthYear = (month: string, year: string) => {
-  if (month === 'All' && year === 'All') {
-    return 'All Months'
-  }
-
-  if (month === 'All' && year !== 'All') {
-    return `Year ${year}`
-  }
-
+  if (month === 'All' && year === 'All') return 'All Months'
+  if (month === 'All' && year !== 'All') return `Year ${year}`
   const monthText = monthLabel[Number(month) - 1] ?? 'Unknown'
   return year === 'All' ? monthText : `${monthText} ${year}`
 }
@@ -67,7 +50,6 @@ const toCsvValue = (value: string | number) => {
   if (text.includes(',') || text.includes('"') || text.includes('\n')) {
     return `"${text.replace(/"/g, '""')}"`
   }
-
   return text
 }
 
@@ -77,7 +59,7 @@ export default function SalesReport() {
   const [searchQuery, setSearchQuery] = useState('')
   const [monthFilter, setMonthFilter] = useState('All')
   const [yearFilter, setYearFilter] = useState('All')
-  const [salesRefFilter, setSalesRefFilter] = useState('All')
+  const [referenceByFilter, setReferenceByFilter] = useState('All')
   const [ticketTypeFilter, setTicketTypeFilter] = useState('All')
   const [dueFilter, setDueFilter] = useState<DueFilter>('All')
 
@@ -99,7 +81,7 @@ export default function SalesReport() {
     fetchRows()
   }, [])
 
-  const salesRefs = useMemo(() => {
+  const referenceByOptions = useMemo(() => {
     const list = new Set<string>()
     rows.forEach((row) => {
       if (row.salesRef) {
@@ -138,7 +120,7 @@ export default function SalesReport() {
 
       const matchesMonth = monthFilter === 'All' || month === monthFilter
       const matchesYear = yearFilter === 'All' || year === yearFilter
-      const matchesSalesRef = salesRefFilter === 'All' || row.salesRef === salesRefFilter
+      const matchesReferenceBy = referenceByFilter === 'All' || row.salesRef === referenceByFilter
       const matchesTicketType = ticketTypeFilter === 'All' || row.ticketType === ticketTypeFilter
 
       const matchesDue =
@@ -154,9 +136,9 @@ export default function SalesReport() {
         row.salesRef.toLowerCase().includes(query) ||
         row.ticketType.toLowerCase().includes(query)
 
-      return matchesMonth && matchesYear && matchesSalesRef && matchesTicketType && matchesDue && matchesSearch
+      return matchesMonth && matchesYear && matchesReferenceBy && matchesTicketType && matchesDue && matchesSearch
     })
-  }, [rows, monthFilter, yearFilter, salesRefFilter, ticketTypeFilter, dueFilter, searchQuery])
+  }, [rows, monthFilter, yearFilter, referenceByFilter, ticketTypeFilter, dueFilter, searchQuery])
 
   const totals = useMemo(() => {
     return filteredRows.reduce(
@@ -205,7 +187,7 @@ export default function SalesReport() {
       'Type of Ticket',
       'No of Ticket',
       'MR No',
-      'Sales Ref.',
+      'Reference By',
       'Ticket Reissue',
       'ADMA/Void Charge',
       'Visa App. Fee',
@@ -377,14 +359,14 @@ export default function SalesReport() {
           </div>
 
           <div>
-            <label className="block text-4xs font-bold text-slate-400 uppercase mb-1">Sales Advisor</label>
+            <label className="block text-4xs font-bold text-slate-400 uppercase mb-1">Reference By</label>
             <select
-              value={salesRefFilter}
-              onChange={(e) => setSalesRefFilter(e.target.value)}
+              value={referenceByFilter}
+              onChange={(e) => setReferenceByFilter(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 outline-none"
             >
-              <option value="All">All Advisors</option>
-              {salesRefs.map((ref) => (
+              <option value="All">All References</option>
+              {referenceByOptions.map((ref) => (
                 <option key={ref} value={ref}>
                   {ref}
                 </option>
@@ -526,7 +508,7 @@ export default function SalesReport() {
                   MR No
                 </th>
                 <th rowSpan={2} className="py-2.5 px-2 border-r border-slate-400 min-w-[90px]">
-                  Sales Ref.
+                  Reference By
                 </th>
 
                 <th
