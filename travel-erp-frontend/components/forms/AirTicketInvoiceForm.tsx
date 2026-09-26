@@ -329,10 +329,21 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <input
                     type="text"
                     placeholder="e.g. 997-38592038"
-                    {...register(`passengers.${index}.ticketNo`, { required: true })}
+                    {...register(`passengers.${index}.ticketNo`, {
+                      required: 'Ticket number is required',
+                      validate: (value) => {
+                        const ticketNumbers = getValues('passengers').map((passenger) => passenger.ticketNo)
+                        return (
+                          ticketNumbers.filter((ticketNo) => ticketNo === value).length <= 1 ||
+                          'Duplicate ticket number in this invoice'
+                        )
+                      },
+                    })}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
                   />
-                  {passengerErrors?.ticketNo && <span className="text-red-500">Required</span>}
+                  {passengerErrors?.ticketNo && (
+                    <span className="text-red-500">{passengerErrors.ticketNo.message}</span>
+                  )}
                 </div>
 
                 <div>

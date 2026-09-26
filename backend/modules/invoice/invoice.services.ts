@@ -1,7 +1,11 @@
 import { prisma } from "../../lib/prisma.js";
 import { InvoiceStatus, InvoiceType } from "@prisma/client";
 import { generateInvoiceNo } from "./invoice-number.js";
-import { assertValidPnr, assertPnrsUnique } from "./invoice.validators.js";
+import {
+  assertTicketNumbersUnique,
+  assertValidPnr,
+  assertPnrsUnique,
+} from "./invoice.validators.js";
 
 type DateLike = string | Date | null | undefined;
 type NumericLike = string | number | null | undefined;
@@ -22,6 +26,7 @@ interface BaseInvoiceInputs {
   clientEmail?: string;
   referenceId?: string;
   reference?: InvoiceContactInput | string;
+  salesBy?: InvoiceContactInput | string;
   referenceEmail?: string;
   issueDate: DateLike;
   status?: InvoiceStatus | "PAID" | "UNPAID" | "PARTIAL";
@@ -94,6 +99,12 @@ interface HotelVisaInputs extends BaseInvoiceInputs {
   profit?: NumericLike;
   extraFee?: NumericLike;
   discount?: NumericLike;
+  customerCount?: NumericLike;
+  services?: {
+    name?: string;
+    costPrice?: NumericLike;
+    salePrice?: NumericLike;
+  }[];
 }
 
 interface TourPackageInputs extends BaseInvoiceInputs {
@@ -336,7 +347,7 @@ const buildCoreInvoiceData = async (
     data.clientEmail,
   );
   const referenceRef = normalizeContactInput(
-    data.reference,
+    data.reference ?? data.salesBy,
     data.referenceEmail,
   );
 
@@ -452,6 +463,7 @@ export async function createAirTicketInvoice(data: AirTicketInputs) {
   const baseData = await buildCoreInvoiceData(data, InvoiceType.AIR_TICKET);
 
   await assertPnrsUnique(data.passengers.map((p) => p.pnr));
+  await assertTicketNumbersUnique(data.passengers.map((p) => p.ticketNo ?? ""));
   const passengers = data.passengers.map(buildPassengerRecord);
   const totals = sumPassengerRollups(passengers);
 
@@ -480,6 +492,7 @@ export async function createNonCommissionInvoice(data: NonCommissionInputs) {
   const baseData = await buildCoreInvoiceData(data, InvoiceType.NON_COMMISSION);
 
   await assertPnrsUnique(data.passengers.map((p) => p.pnr));
+  await assertTicketNumbersUnique(data.passengers.map((p) => p.ticketNo ?? ""));
   const passengers = data.passengers.map(buildPassengerRecord);
   const totals = sumPassengerRollups(passengers);
 
@@ -508,6 +521,7 @@ export async function createReissueInvoice(data: ReissueInputs) {
   const baseData = await buildCoreInvoiceData(data, InvoiceType.REISSUE);
 
   await assertPnrsUnique(data.passengers.map((p) => p.pnr));
+  await assertTicketNumbersUnique(data.passengers.map((p) => p.ticketNo ?? ""));
   const passengers = data.passengers.map(buildPassengerRecord);
   const totals = sumPassengerRollups(passengers);
 
@@ -531,17 +545,38 @@ export async function createHotelVisaInvoice(data: HotelVisaInputs) {
     data.bookingType === "Hotel" ? InvoiceType.HOTEL : InvoiceType.VISA,
   );
 
+  const customerCount = Math.max(
+    1,
+    Math.trunc(toNumber(data.customerCount, 1)),
+  );
+  const hotelServices = (data.services ?? []).map((service) => ({
+    name: service.name,
+    costPrice: toNumber(service.costPrice),
+    salePrice: toNumber(service.salePrice),
+  }));
+  const hotelServiceCost = hotelServices.reduce(
+    (total, service) => total + (service.costPrice ?? 0),
+    0,
+  );
+  const hotelServiceSale = hotelServices.reduce(
+    (total, service) => total + (service.salePrice ?? 0),
+    0,
+  );
   const purchasePriceValue = toNumber(
     data.purchasePrice ??
       (data.bookingType === "Hotel"
-        ? toNumber(data.hotelCost) * Math.max(1, toNumber(data.nights, 1))
+        ? (hotelServices.length ? hotelServiceCost : toNumber(data.hotelCost)) *
+          Math.max(1, toNumber(data.nights, 1)) *
+          customerCount
         : toNumber(data.visaCost)),
   );
 
   const clientPriceValue = toNumber(
     data.clientPrice ??
       (data.bookingType === "Hotel"
-        ? toNumber(data.hotelSale) * Math.max(1, toNumber(data.nights, 1))
+        ? (hotelServices.length ? hotelServiceSale : toNumber(data.hotelSale)) *
+          Math.max(1, toNumber(data.nights, 1)) *
+          customerCount
         : toNumber(data.visaSale)),
   );
 
@@ -583,6 +618,9 @@ export async function createHotelVisaInvoice(data: HotelVisaInputs) {
       totalProfit: profitValue,
       totalExtraFee: toNumber(data.extraFee),
       totalDiscount: toNumber(data.discount),
+      hotelCustomerCount:
+        data.bookingType === "Hotel" ? customerCount : undefined,
+      hotelServices: data.bookingType === "Hotel" ? hotelServices : undefined,
     },
   });
 }

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Coins, Sparkles, Save } from 'lucide-react'
-import { Invoice } from '../types'
+import { Coins } from 'lucide-react'
 import TitleCard from '../components/common/TitleCard'
 import NonCommissionForm from '../components/forms/NonCommissionForm'
 import { api } from '../lib/api'
@@ -48,7 +47,6 @@ export default function NonCommissionInvoice() {
 
   return (
     <div id="non-commission-container" className="flex-1 p-8 bg-slate-50 overflow-y-auto space-y-6">
-      {/* Header Panel */}
       <div
         id="nc-header"
         className="bg-white p-6 rounded-2xl border border-slate-200/60 flex flex-col md:flex-row md:items-center md:justify-between gap-4"

@@ -28,11 +28,11 @@ const toMoney = (value?: number | null) => Number((value ?? 0).toFixed(2));
 
 const getTicketTypeLabel = (type: InvoiceType) => {
   if (type === InvoiceType.AIR_TICKET) {
-    return "Int:";
+    return "Air Ticket";
   }
 
   if (type === InvoiceType.NON_COMMISSION) {
-    return "Domestic";
+    return "Non-Commission";
   }
 
   if (type === InvoiceType.REISSUE) {
@@ -48,6 +48,22 @@ const getTicketTypeLabel = (type: InvoiceType) => {
   }
 
   return "Tour Package";
+};
+
+const getTicketCount = (invoice: {
+  type: InvoiceType;
+  passengers: unknown[];
+  billing?: { billingQty?: number | null } | null;
+}) => {
+  if (
+    invoice.type === InvoiceType.AIR_TICKET ||
+    invoice.type === InvoiceType.NON_COMMISSION ||
+    invoice.type === InvoiceType.REISSUE
+  ) {
+    return invoice.passengers.length || 1;
+  }
+
+  return invoice.billing?.billingQty ?? 1;
 };
 
 const normalizeBankChannel = (value?: string | null) =>
@@ -66,12 +82,14 @@ const getAllReports = async () => {
     });
 
     const rows: GeneratedSalesReportRow[] = invoices.map((invoice) => {
-      const clientPrice = toMoney(invoice.clientPrice);
+      const clientPrice = toMoney(invoice.totalClientPrice);
 
       const ticketReissue =
         invoice.type === InvoiceType.REISSUE ? clientPrice : 0;
       const admaVoidCharge =
-        invoice.type === InvoiceType.REISSUE ? toMoney(invoice.extraFee) : 0;
+        invoice.type === InvoiceType.REISSUE
+          ? toMoney(invoice.totalExtraFee)
+          : 0;
       const visaAppFee = invoice.type === InvoiceType.VISA ? clientPrice : 0;
       const hotelBooking = invoice.type === InvoiceType.HOTEL ? clientPrice : 0;
       const ticket =
@@ -135,7 +153,7 @@ const getAllReports = async () => {
         date: invoice.issueDate.toISOString(),
         invoiceNo: invoice.invoiceNo,
         ticketType: getTicketTypeLabel(invoice.type),
-        ticketCount: invoice.billing?.billingQty ?? 1,
+        ticketCount: getTicketCount(invoice),
         mrNo: latestPayment?.remarks ?? "",
         salesRef: invoice.reference?.name ?? "",
         ticketReissue,

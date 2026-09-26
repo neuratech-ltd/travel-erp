@@ -204,6 +204,12 @@ type MedicalInfo {
   profit            Float?
 }
 
+type HotelService {
+  name      String?
+  costPrice Float?
+  salePrice Float?
+}
+
 type Billing {
   unitPrice       Float?
   costPrice       Float?
@@ -278,13 +284,15 @@ model Invoice {
   totalExtraFee        Float @default(0)
   totalProfit          Float @default(0)
 
-  passportInfo  PassportInfo?
-  ticketInfo    TicketInfo?
-  accommodation Accommodation?
-  transport     Transport?
-  visaInfo      VisaInfo?
-  medicalInfo   MedicalInfo?
-  billing       Billing?
+  passportInfo       PassportInfo?
+  ticketInfo         TicketInfo?
+  accommodation      Accommodation?
+  transport          Transport?
+  visaInfo           VisaInfo?
+  medicalInfo        MedicalInfo?
+  billing            Billing?
+  hotelCustomerCount Int?
+  hotelServices      HotelService[]
 
   payments Payment[]
   agent    Agent?    @relation(fields: [agentId], references: [id])

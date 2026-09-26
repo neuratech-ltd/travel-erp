@@ -10,9 +10,9 @@ export interface CreatePaymentInput {
 }
 
 const getInvoiceTotal = (invoice: {
-  clientPrice: number | null;
+  totalClientPrice: number;
   billing: { netTotal: number | null } | null;
-}) => invoice.clientPrice ?? invoice.billing?.netTotal ?? 0;
+}) => invoice.totalClientPrice ?? invoice.billing?.netTotal ?? 0;
 
 const getInvoiceStatus = (total: number, received: number) => {
   if (received <= 0) return InvoiceStatus.UNPAID;

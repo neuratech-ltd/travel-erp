@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { User, Calendar, DollarSign } from 'lucide-react'
+import { Calendar, DollarSign, Plus, Save, Trash2 } from 'lucide-react'
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '../ui/combobox'
 import SuccessPopup from '../common/SuccessPopup'
 import { api } from '../../lib/api'
@@ -23,11 +23,12 @@ interface ReIssueInvoiceFormProps {
 }
 
 const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormProps) => {
-  const [penalties, setPenalties] = useState(0)
-  const [fareDifference, setFareDifference] = useState(0)
-  const [taxDifference, setTaxDifference] = useState(0)
+  const [passengers, setPassengers] = useState([
+    { passengerName: '', ticketNo: '', pnr: '', route: '', penalties: 0, fareDifference: 0, taxDifference: 0 },
+  ])
   const [extraFee, setExtraFee] = useState(0)
   const [discount, setDiscount] = useState(0)
+  const [validationError, setValidationError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successOpen, setSuccessOpen] = useState(false)
   const [successDetail, setSuccessDetail] = useState('')
@@ -39,12 +40,14 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
     return String(value).trim()
   }
 
-  const purchasePrice = useMemo(
-    () => penalties + fareDifference + taxDifference,
-    [fareDifference, penalties, taxDifference],
-  )
-  const clientPrice = useMemo(() => purchasePrice + extraFee - discount, [discount, extraFee, purchasePrice])
-  const profit = useMemo(() => clientPrice - purchasePrice, [clientPrice, purchasePrice])
+  const totals = useMemo(() => {
+    const purchasePrice = passengers.reduce(
+      (total, passenger) => total + passenger.penalties + passenger.fareDifference + passenger.taxDifference,
+      0,
+    )
+    const clientPrice = purchasePrice + extraFee - discount
+    return { purchasePrice, clientPrice, profit: clientPrice - purchasePrice }
+  }, [discount, extraFee, passengers])
 
   const createInvoice = async (invoiceData: any) => {
     const { data } = await api.post('/invoices/reissue', invoiceData)
@@ -67,6 +70,13 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    const ticketNumbers = passengers.map((passenger) => passenger.ticketNo.trim()).filter(Boolean)
+    if (new Set(ticketNumbers).size !== ticketNumbers.length) {
+      setValidationError('Each passenger must have a unique ticket number.')
+      return
+    }
+
+    setValidationError('')
     setIsSubmitting(true)
 
     const formData = new FormData(e.currentTarget)
@@ -77,11 +87,23 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
       invoiceNumber: toStringValue(formData.get('invoiceNo')),
       salesDate: toStringValue(formData.get('salesDate')),
       dueDate: toStringValue(formData.get('dueDate')),
-      ticketNo: toStringValue(formData.get('ticketNo')),
-      penalties,
-      fareDifference,
-      taxDifference,
-      purchasePrice,
+      passengers: passengers.map((passenger, index) => ({
+        paxName: passenger.passengerName,
+        ticketNo: passenger.ticketNo,
+        pnr: passenger.pnr,
+        route: passenger.route,
+        penalties: passenger.penalties,
+        fareDifference: passenger.fareDifference,
+        taxDifference: passenger.taxDifference,
+        baseFare: passenger.penalties + passenger.fareDifference + passenger.taxDifference,
+        clientPrice:
+          passenger.penalties +
+          passenger.fareDifference +
+          passenger.taxDifference +
+          (index === 0 ? extraFee - discount : 0),
+        extraFee: index === 0 ? extraFee : 0,
+        discount: index === 0 ? discount : 0,
+      })),
       extraFee,
       discount,
       airline: toStringValue(formData.get('airline')),
@@ -92,15 +114,16 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
     try {
       const result = await createInvoice(invoiceData)
       setSuccessDetail(
-        `Invoice ${result.data?.invoiceNo || invoiceData.invoiceNumber} saved with ৳${clientPrice.toFixed(2)} total value.`,
+        `Invoice ${result.data?.invoiceNo || invoiceData.invoiceNumber} saved with ৳${totals.clientPrice.toFixed(2)} total value.`,
       )
       setSuccessOpen(true)
       e.currentTarget.reset()
-      setPenalties(0)
-      setFareDifference(0)
-      setTaxDifference(0)
+      setPassengers([
+        { passengerName: '', ticketNo: '', pnr: '', route: '', penalties: 0, fareDifference: 0, taxDifference: 0 },
+      ])
       setExtraFee(0)
       setDiscount(0)
+      setValidationError('')
     } catch (error) {
       console.error('Error creating invoice:', error)
     } finally {
@@ -184,62 +207,95 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
         </div>
       </div>
 
-      {/* Reissue Pricing differences */}
+      {/* Reissue passengers and pricing */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200/60 space-y-4">
         <h3 className="text-xs font-bold text-slate-700 tracking-wider uppercase border-b border-slate-100 pb-2">
           Reissue Difference Calculations
         </h3>
+        {passengers.map((passenger, index) => (
+          <div key={index} className="border border-slate-100 rounded-xl p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-slate-700">Passenger {index + 1}</span>
+              {passengers.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setPassengers(passengers.filter((_, row) => row !== index))}
+                  className="text-red-500"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+              {(['passengerName', 'ticketNo', 'pnr', 'route'] as const).map((field) => (
+                <div key={field}>
+                  <label className="block text-slate-500 font-bold mb-1">
+                    {field === 'passengerName' ? 'Passenger Name *' : field.toUpperCase()}
+                  </label>
+                  <input
+                    value={passenger[field]}
+                    required
+                    onChange={(event) =>
+                      setPassengers(
+                        passengers.map((row, rowIndex) =>
+                          rowIndex === index ? { ...row, [field]: event.target.value } : row,
+                        ),
+                      )
+                    }
+                    className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
+                  />
+                </div>
+              ))}
+              {(['penalties', 'fareDifference', 'taxDifference'] as const).map((field) => (
+                <div key={field}>
+                  <label className="block text-slate-500 font-bold mb-1">{field.replace(/([A-Z])/g, ' $1')}</label>
+                  <input
+                    type="number"
+                    value={passenger[field]}
+                    onChange={(event) =>
+                      setPassengers(
+                        passengers.map((row, rowIndex) =>
+                          rowIndex === index ? { ...row, [field]: Number(event.target.value) || 0 } : row,
+                        ),
+                      )
+                    }
+                    className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
+                  />
+                </div>
+              ))}
+              <div className="bg-slate-100 rounded-lg p-2 flex items-center font-bold text-slate-600">
+                Purchase: ৳{(passenger.penalties + passenger.fareDifference + passenger.taxDifference).toFixed(2)}
+              </div>
+            </div>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() =>
+            setPassengers([
+              ...passengers,
+              {
+                passengerName: '',
+                ticketNo: '',
+                pnr: '',
+                route: '',
+                penalties: 0,
+                fareDifference: 0,
+                taxDifference: 0,
+              },
+            ])
+          }
+          className="flex items-center gap-1.5 px-4 py-2 border border-dashed border-blue-300 text-blue-600 rounded-xl text-xs font-bold"
+        >
+          <Plus className="h-4 w-4" /> Add Passenger
+        </button>
+        {validationError && <p className="text-red-600 text-xs font-semibold">{validationError}</p>}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
           <div>
-            <label className="block text-slate-500 font-bold mb-1">Ticket No *</label>
-            <input
-              name="ticketNo"
-              type="text"
-              // value={ticketNo}
-              // onChange={(e) => setTicketNo(e.target.value)}
-              className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-slate-500 font-bold mb-1">Airline Penalties *</label>
-            <input
-              name="penalties"
-              type="number"
-              onChange={(e) => setPenalties(Number(e.target.value) || 0)}
-              className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-slate-500 font-bold mb-1">Fare Difference *</label>
+            <label className="block text-slate-500 font-bold mb-1">Total Purchase Price</label>
             <input
               type="number"
-              name="fareDifference"
-              // value={fareDifference}
-              // onChange={(e) => setFareDifference(Number(e.target.value))}
-              className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-slate-500 font-bold mb-1">Tax Difference *</label>
-            <input
-              type="number"
-              name="taxDifference"
-              // value={taxDifference}
-              // onChange={(e) => setTaxDifference(Number(e.target.value))}
-              className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-slate-500 font-bold mb-1">Total Purchase Price (Calculated)</label>
-            <input
-              type="number"
-              name="purchasePrice"
-              value={purchasePrice}
+              value={totals.purchasePrice}
               readOnly
               className="w-full border border-slate-200 rounded-lg p-2 bg-slate-100 text-slate-600 outline-none font-bold"
             />
@@ -263,8 +319,8 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
             />
           </div>
           <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 flex flex-col justify-center">
-            <span className="block text-4xs font-bold text-blue-500 uppercase font-medium">Reissue Net Profit</span>
-            <span className="text-sm font-black text-blue-700">৳{profit.toFixed(2)}</span>
+            <span className="block text-4xs font-bold text-blue-500 uppercase">Reissue Net Profit</span>
+            <span className="text-sm font-black text-blue-700">৳{totals.profit.toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -289,7 +345,6 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
             <input
               type="text"
               name="route"
-              // value={route}
               // onChange={(e) => setRoute(e.target.value)}
               className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
               required

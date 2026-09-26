@@ -71,7 +71,7 @@ const PassengerRow = ({ passenger }: { passenger: Passenger }) => (
     <Text style={[styles.cell, styles.route, styles.small]}>{display(passenger.route)}</Text>
     <Text style={[styles.cell, styles.date, styles.small]}>{date(passenger.journeyDate)}</Text>
     <Text style={[styles.cell, styles.fare, styles.small]}>{money(passenger.clientPrice)}</Text>
-    <Text style={[styles.cell, styles.profit, styles.small]}>{money(passenger.profit)}</Text>
+    {/* <Text style={[styles.cell, styles.profit, styles.small]}>{money(passenger.profit)}</Text> */}
   </View>
 )
 
@@ -148,7 +148,7 @@ export default function InvoicePdfDocument({ invoice }: { invoice: Invoice }) {
                 <Text style={[styles.cell, styles.route, styles.small]}>Route</Text>
                 <Text style={[styles.cell, styles.date, styles.small]}>Journey</Text>
                 <Text style={[styles.cell, styles.fare, styles.small]}>Amount</Text>
-                <Text style={[styles.cell, styles.profit, styles.small]}>Profit</Text>
+                {/* <Text style={[styles.cell, styles.profit, styles.small]}>Profit</Text> */}
               </View>
               {passengers.map((passenger, index) => (
                 <PassengerRow key={`${passenger.paxName}-${index}`} passenger={passenger} />
@@ -210,10 +210,10 @@ export default function InvoicePdfDocument({ invoice }: { invoice: Invoice }) {
               <Text>Due amount</Text>
               <Text>{money(due)}</Text>
             </View>
-            <View style={styles.totalRow}>
+            {/* <View style={styles.totalRow}>
               <Text>Total profit</Text>
               <Text>{money(invoice.totalProfit ?? invoice.billing?.totalProfit)}</Text>
-            </View>
+            </View> */}
           </View>
         </View>
         {invoice.payments && invoice.payments.length > 0 && (
@@ -232,10 +232,10 @@ export default function InvoicePdfDocument({ invoice }: { invoice: Invoice }) {
           <Text style={styles.signature}>
             Prepared by{invoice.reference?.name ? `\n${invoice.reference.name}` : ''}
           </Text>
-          <Text style={styles.signature}>Client acknowledgement</Text>
+          {/* <Text style={styles.signature}>Client acknowledgement</Text> */}
           <Text style={styles.signature}>Authorized by</Text>
         </View>
-        <Text style={styles.notes}>This invoice is computer generated and does not require a signature.</Text>
+        {/* <Text style={styles.notes}>This invoice is computer generated and does not require a signature.</Text> */}
       </Page>
     </Document>
   )

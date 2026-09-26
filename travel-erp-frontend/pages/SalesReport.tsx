@@ -375,7 +375,7 @@ export default function SalesReport() {
           </div>
 
           <div>
-            <label className="block text-4xs font-bold text-slate-400 uppercase mb-1">Ticket Class</label>
+            <label className="block text-4xs font-bold text-slate-400 uppercase mb-1">Invoice Type</label>
             <select
               value={ticketTypeFilter}
               onChange={(e) => setTicketTypeFilter(e.target.value)}
