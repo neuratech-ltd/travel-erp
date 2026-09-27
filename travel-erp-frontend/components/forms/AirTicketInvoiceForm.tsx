@@ -80,7 +80,9 @@ const computeRow = (p: PassengerRow) => {
   const extraFee = Number(p.extraFee) || 0
 
   const calculatedCommission = Number(((baseFare * commissionPct) / 100).toFixed(2))
-  const purchaseCost = Number((baseFare + taxesCommission + aitTax - calculatedCommission).toFixed(2))
+  const taxesCommissionAmount = Number(((baseFare * taxesCommission) / 100).toFixed(2))
+  const aitTaxAmount = Number(((baseFare * aitTax) / 100).toFixed(2))
+  const purchaseCost = Number((baseFare + taxesCommissionAmount + aitTaxAmount - calculatedCommission).toFixed(2))
   const netCommission = Number((calculatedCommission - extraFee).toFixed(2))
   const profit = Number((clientPrice - purchaseCost - discountGiven + extraFee).toFixed(2))
 
@@ -347,15 +349,12 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                 </div>
 
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">PNR * (6 digits)</label>
+                  <label className="block text-slate-500 font-bold mb-1">PNR *</label>
                   <input
                     type="text"
-                    placeholder="e.g. 384920"
-                    maxLength={6}
-                    inputMode="numeric"
+                    placeholder="e.g. ABC123"
                     {...register(`passengers.${index}.pnr`, {
                       required: 'PNR is required',
-                      pattern: { value: /^\d{6}$/, message: '6-digit numeric PNR required' },
                       validate: (value) => {
                         const all = getValues('passengers').map((p) => p.pnr)
                         const dupes = all.filter((p) => p === value)
@@ -401,7 +400,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">Taxes Commission</label>
+                  <label className="block text-slate-500 font-bold mb-1">Taxes Commission %</label>
                   <input
                     type="number"
                     step="0.01"
@@ -410,7 +409,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">AIT Tax</label>
+                  <label className="block text-slate-500 font-bold mb-1">AIT Tax %</label>
                   <input
                     type="number"
                     step="0.01"

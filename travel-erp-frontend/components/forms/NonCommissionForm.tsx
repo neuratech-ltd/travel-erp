@@ -25,7 +25,7 @@ interface PassengerRow {
   journeyDate: string
   returnDate: string
   grossFare: number
-  purchasePrice: number
+  taxesCommission: number
   aitTax: number
   clientPrice: number
   discount: number
@@ -55,7 +55,7 @@ const emptyPassenger: PassengerRow = {
   journeyDate: '',
   returnDate: '',
   grossFare: 0,
-  purchasePrice: 0,
+  taxesCommission: 0,
   aitTax: 0,
   clientPrice: 0,
   discount: 0,
@@ -67,7 +67,11 @@ const inputClass =
 
 const computeRow = (passenger: PassengerRow) => {
   const grossFare = Number(passenger.grossFare) || 0
-  const purchasePrice = Number(passenger.purchasePrice) || 0
+  const taxesCommission = Number(passenger.taxesCommission) || 0
+  const aitTax = Number(passenger.aitTax) || 0
+  const purchasePrice = Number(
+    (grossFare + (grossFare * taxesCommission) / 100 + (grossFare * aitTax) / 100).toFixed(2),
+  )
   const clientPrice = Number(passenger.clientPrice) || 0
   const discount = Number(passenger.discount) || 0
   const extraFee = Number(passenger.extraFee) || 0
@@ -142,7 +146,7 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
         journeyDate: passenger.journeyDate || undefined,
         returnDate: passenger.returnDate || undefined,
         baseFare: passenger.grossFare,
-        taxesCommission: passenger.purchasePrice - passenger.grossFare - passenger.aitTax,
+        taxesCommission: passenger.taxesCommission,
         aitTax: passenger.aitTax,
         commissionPct: 0,
         clientPrice: passenger.clientPrice,
@@ -239,7 +243,13 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
         </div>
         <div>
           <label className="block text-slate-500 font-bold mb-1">Airline</label>
-          <input type="text" {...register('airline')} className={inputClass} />
+          <select {...register('airline')} className={inputClass}>
+            <option>Emirates</option>
+            <option>Qatar Airways</option>
+            <option>Singapore Airlines</option>
+            <option>Turkish Airlines</option>
+            <option>US-Bangla Airlines</option>
+          </select>
         </div>
       </div>
 
@@ -288,14 +298,12 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                     className={inputClass}
                   />
                 </Field>
-                <Field label="PNR * (6 digits)" error={passengerErrors?.pnr?.message}>
+                <Field label="PNR *" error={passengerErrors?.pnr?.message}>
                   <input
                     type="text"
-                    maxLength={6}
-                    inputMode="numeric"
+                    placeholder="e.g. ABC123"
                     {...register(fieldName('pnr'), {
                       required: 'PNR is required',
-                      pattern: { value: /^\d{6}$/, message: '6-digit numeric PNR required' },
                       validate: (value) => {
                         const pnrs = getValues('passengers').map((item) => item.pnr)
                         return pnrs.filter((pnr) => pnr === value).length <= 1 || 'Duplicate PNR in this invoice'
@@ -319,18 +327,18 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                     className={inputClass}
                   />
                 </Field>
-                <Field label="Purchase Price (Net Rate) *" error={passengerErrors?.purchasePrice?.message}>
+                <Field label="Purchase Price (Net Rate)">
+                  <input type="number" step="0.01" value={row.purchasePrice} readOnly className={inputClass} />
+                </Field>
+                <Field label="Taxes Commission %">
                   <input
                     type="number"
                     step="0.01"
-                    {...register(fieldName('purchasePrice'), {
-                      required: 'Purchase price is required',
-                      valueAsNumber: true,
-                    })}
+                    {...register(fieldName('taxesCommission'), { valueAsNumber: true })}
                     className={inputClass}
                   />
                 </Field>
-                <Field label="AIT Tax">
+                <Field label="AIT Tax %">
                   <input
                     type="number"
                     step="0.01"

@@ -384,8 +384,17 @@ const buildPassengerRecord = (p: PassengerInput) => {
   const calculatedCommission = Number(
     ((baseFare * commissionPct) / 100).toFixed(2),
   );
+  const taxesCommissionAmount = Number(
+    ((baseFare * taxesCommission) / 100).toFixed(2),
+  );
+  const aitTaxAmount = Number(((baseFare * aitTax) / 100).toFixed(2));
   const purchaseCost = Number(
-    (baseFare + taxesCommission + aitTax - calculatedCommission).toFixed(2),
+    (
+      baseFare +
+      taxesCommissionAmount +
+      aitTaxAmount -
+      calculatedCommission
+    ).toFixed(2),
   );
   const netCommission = Number((calculatedCommission - extraFee).toFixed(2));
   const profit = Number(

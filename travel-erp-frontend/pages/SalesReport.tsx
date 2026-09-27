@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { FileSpreadsheet, Printer, Download, Search, Building, MapPin, Info, RefreshCw } from 'lucide-react'
-import { SalesReportRow } from '../types'
+import { FileSpreadsheet, Printer, Download, Search, Building, MapPin, Info, RefreshCw, FileText } from 'lucide-react'
+import { Invoice, SalesReportRow } from '../types'
 import { api } from '../lib/api'
+import InvoicePdfModal from '../components/invoice/InvoicePdfModal'
+import SalesReportPdfModal from '../components/invoice/SalesReportPdfModal'
 
 type DueFilter = 'All' | 'Has Due' | 'Cleared'
 
@@ -55,6 +57,9 @@ const toCsvValue = (value: string | number) => {
 
 export default function SalesReport() {
   const [rows, setRows] = useState<SalesReportRow[]>([])
+  const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [pdfInvoice, setPdfInvoice] = useState<Invoice | null>(null)
+  const [reportPdfOpen, setReportPdfOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [monthFilter, setMonthFilter] = useState('All')
@@ -66,10 +71,10 @@ export default function SalesReport() {
   const fetchRows = async () => {
     setIsLoading(true)
     try {
-      const { data: json } = await api.get('/sales-reports')
-      if (json.success) {
-        setRows(json.data)
-      }
+      const [salesResponse, invoicesResponse] = await Promise.all([api.get('/sales-reports'), api.get('/invoices')])
+      if (salesResponse.data.success) setRows(salesResponse.data.data)
+      const invoiceData = invoicesResponse.data
+      setInvoices(invoiceData.success ? invoiceData.data : Array.isArray(invoiceData) ? invoiceData : [])
     } catch (error) {
       console.error('Failed to load sales report data', error)
     } finally {
@@ -80,6 +85,8 @@ export default function SalesReport() {
   useEffect(() => {
     fetchRows()
   }, [])
+
+  const invoiceByNumber = useMemo(() => new Map(invoices.map((invoice) => [invoice.invoiceNo, invoice])), [invoices])
 
   const referenceByOptions = useMemo(() => {
     const list = new Set<string>()
@@ -177,7 +184,7 @@ export default function SalesReport() {
   }, [filteredRows])
 
   const handlePrint = () => {
-    window.print()
+    setReportPdfOpen(true)
   }
 
   const handleExportCSV = () => {
@@ -492,22 +499,22 @@ export default function SalesReport() {
           <table className="w-full text-left border-collapse text-3xs border border-slate-300 font-sans">
             <thead>
               <tr className="bg-[#0B2E2D] text-white text-center font-bold uppercase tracking-wider border border-slate-300">
-                <th rowSpan={2} className="py-2.5 px-2 border-r border-slate-400 text-left min-w-[70px]">
+                <th rowSpan={2} className="py-2.5 px-2 border-r border-slate-400 text-left min-w-17.5">
                   Date
                 </th>
-                <th rowSpan={2} className="py-2.5 px-1 border-r border-slate-400 min-w-[50px]">
+                <th rowSpan={2} className="py-2.5 px-1 border-r border-slate-400 min-w-12.5">
                   Inv. No
                 </th>
-                <th rowSpan={2} className="py-2.5 px-2 border-r border-slate-400 min-w-[75px]">
+                <th rowSpan={2} className="py-2.5 px-2 border-r border-slate-400 min-w-12.5">
                   Type of Ticket
                 </th>
-                <th rowSpan={2} className="py-2.5 px-1 border-r border-slate-400 min-w-[50px]">
+                <th rowSpan={2} className="py-2.5 px-1 border-r border-slate-400 min-w-12.5">
                   No of Ticket
                 </th>
-                <th rowSpan={2} className="py-2.5 px-2 border-r border-slate-400 min-w-[90px]">
+                <th rowSpan={2} className="py-2.5 px-2 border-r border-slate-400 min-w-22.5">
                   MR No
                 </th>
-                <th rowSpan={2} className="py-2.5 px-2 border-r border-slate-400 min-w-[90px]">
+                <th rowSpan={2} className="py-2.5 px-2 border-r border-slate-400 min-w-22.5">
                   Reference By
                 </th>
 
@@ -518,7 +525,7 @@ export default function SalesReport() {
                   Sales Amount
                 </th>
 
-                <th rowSpan={2} className="py-2.5 px-2 border-r border-slate-400 min-w-[70px]">
+                <th rowSpan={2} className="py-2.5 px-2 border-r border-slate-400 min-w-17.5">
                   Received Date
                 </th>
 
@@ -529,30 +536,28 @@ export default function SalesReport() {
                   Received
                 </th>
 
-                <th rowSpan={2} className="py-2.5 px-2 text-right min-w-[85px] bg-rose-900/20 text-[#4D1416]">
+                <th rowSpan={2} className="py-2.5 px-2 text-right min-w-21.25 bg-rose-900/20 text-white">
                   Due Amount
                 </th>
               </tr>
 
               <tr className="bg-[#154645] text-white text-right font-semibold border-b border-slate-300">
-                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-[75px]">
+                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-18.75">
                   Ticket Reissue
                 </th>
-                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-[75px]">ADMA/Void</th>
-                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-[75px]">Visa App</th>
-                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-[75px]">Hotel Book</th>
-                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-[80px]">Ticket</th>
-                <th className="py-1.5 px-2 border-r border-slate-400 font-bold bg-[#1C5E5C] text-center min-w-[90px]">
+                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-18.75">ADMA/Void</th>
+                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-18.75">Visa App</th>
+                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-18.75">Hotel Book</th>
+                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-20">Ticket</th>
+                <th className="py-1.5 px-2 border-r border-slate-400 font-bold bg-[#1C5E5C] text-center min-w-22.5">
                   Total Sales
                 </th>
 
-                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-[75px]">Cash</th>
-                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-[75px]">Brac Bank</th>
-                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-[75px]">
-                  Pubali Bank
-                </th>
-                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-[75px]">DBBL</th>
-                <th className="py-1.5 px-2 border-r border-slate-400 font-bold bg-[#1D5F5D] text-center min-w-[90px]">
+                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-18.75">Cash</th>
+                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-18.75">Brac Bank</th>
+                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-18.75">Pubali Bank</th>
+                <th className="py-1.5 px-2 border-r border-slate-400 font-mono text-center min-w-18.75">DBBL</th>
+                <th className="py-1.5 px-2 border-r border-slate-400 font-bold bg-[#1D5F5D] text-center min-w-22.5">
                   Total (taka)
                 </th>
               </tr>
@@ -564,7 +569,20 @@ export default function SalesReport() {
                     {formatDate(row.date)}
                   </td>
                   <td className="py-2 px-1 border-r border-slate-300 font-bold text-slate-900 text-center">
-                    {row.invoiceNo}
+                    <span className="inline-flex items-center gap-1.5">
+                      {row.invoiceNo}
+                      <button
+                        type="button"
+                        disabled={!invoiceByNumber.has(row.invoiceNo)}
+                        onClick={() => setPdfInvoice(invoiceByNumber.get(row.invoiceNo) ?? null)}
+                        className="rounded p-1 text-indigo-600 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:text-slate-300 print:hidden"
+                        title={
+                          invoiceByNumber.has(row.invoiceNo) ? 'Open invoice PDF' : 'Full invoice data unavailable'
+                        }
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
                   </td>
                   <td className="py-2 px-2 border-r border-slate-300 text-slate-600 text-center">
                     {row.ticketType || '-'}
@@ -636,7 +654,7 @@ export default function SalesReport() {
                 </tr>
               )}
 
-              <tr className="bg-emerald-500/10 font-extrabold text-slate-950 border-t-2 border-slate-900 border-b-4 border-double border-slate-900">
+              <tr className="bg-emerald-500/10 font-extrabold text-slate-950 border-t-2 border-b-4 border-double border-slate-900">
                 <td
                   colSpan={3}
                   className="py-3 px-2 border-r border-slate-300 text-left font-black tracking-wider uppercase bg-emerald-600/5"
@@ -712,6 +730,16 @@ export default function SalesReport() {
           </div>
         </div>
       </div>
+
+      {pdfInvoice && <InvoicePdfModal invoice={pdfInvoice} onClose={() => setPdfInvoice(null)} />}
+      {reportPdfOpen && (
+        <SalesReportPdfModal
+          rows={filteredRows}
+          totals={totals}
+          title={`Welcare Trip Sales Report - ${formatMonthYear(monthFilter, yearFilter)}`}
+          onClose={() => setReportPdfOpen(false)}
+        />
+      )}
     </div>
   )
 }

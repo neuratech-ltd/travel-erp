@@ -1,11 +1,9 @@
 // invoice.validators.ts
 import { prisma } from "../../lib/prisma.js";
 
-const PNR_REGEX = /^\d{6}$/;
-
 export const assertValidPnr = (pnr: string) => {
-  if (!PNR_REGEX.test(pnr)) {
-    throw new Error(`Invalid PNR "${pnr}": must be exactly 6 digits`);
+  if (!pnr || !pnr.trim()) {
+    throw new Error("PNR is required");
   }
 };
 

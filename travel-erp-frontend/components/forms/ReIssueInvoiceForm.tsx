@@ -84,7 +84,6 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
     const invoiceData = {
       clientName: toStringValue(formData.get('clientName')),
       salesBy: toStringValue(formData.get('salesBy')),
-      invoiceNumber: toStringValue(formData.get('invoiceNo')),
       salesDate: toStringValue(formData.get('salesDate')),
       dueDate: toStringValue(formData.get('dueDate')),
       passengers: passengers.map((passenger, index) => ({
@@ -113,9 +112,7 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
 
     try {
       const result = await createInvoice(invoiceData)
-      setSuccessDetail(
-        `Invoice ${result.data?.invoiceNo || invoiceData.invoiceNumber} saved with ৳${totals.clientPrice.toFixed(2)} total value.`,
-      )
+      setSuccessDetail(`Invoice ${result.data?.invoiceNo} saved with ৳${totals.clientPrice.toFixed(2)} total value.`)
       setSuccessOpen(true)
       e.currentTarget.reset()
       setPassengers([
@@ -173,17 +170,6 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
               </option>
             ))}
           </select>
-        </div>
-        <div>
-          <label className="block text-slate-500 font-bold mb-1">Invoice No *</label>
-          <input
-            name="invoiceNo"
-            type="text"
-            // value={invoiceNo}
-            // onChange={(e) => setInvoiceNo(e.target.value)}
-            className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 font-semibold outline-none"
-            required
-          />
         </div>
         <div>
           <label className="block text-slate-500 font-bold mb-1">Sales Date</label>
@@ -332,13 +318,16 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
           <div>
             <label className="block text-slate-500 font-bold mb-1">Airline</label>
-            <input
-              type="text"
+            <select
               name="airline"
-              // value={airline}
-              // onChange={(e) => setAirline(e.target.value)}
               className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
-            />
+            >
+              <option>Emirates</option>
+              <option>Qatar Airways</option>
+              <option>Singapore Airlines</option>
+              <option>Turkish Airlines</option>
+              <option>US-Bangla Airlines</option>
+            </select>
           </div>
           <div>
             <label className="block text-slate-500 font-bold mb-1">Route / Sector *</label>
