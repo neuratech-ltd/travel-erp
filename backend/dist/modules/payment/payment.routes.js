@@ -1,0 +1,7 @@
+import express from 'express';
+import * as paymentController from './payment.controller.js';
+const router = express.Router();
+router.get('/', paymentController.getPayments);
+router.post('/invoice/:invoiceId', paymentController.createPaymentController);
+router.get('/:id', paymentController.getPaymentByIdController);
+export default router;

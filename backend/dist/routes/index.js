@@ -1,0 +1,17 @@
+import express from "express";
+import clientRoute from "../modules/client/client.routes.js";
+import aiRoute from "../modules/ai/ai.routes.js";
+import employeeRoute from "../modules/employee/employee.routes.js";
+import invoiceRoute from "../modules/invoice/invoice.routes.js";
+import salesReportRoute from "../modules/salesReport/salesReport.routes.js";
+import paymentRoute from "../modules/payment/payment.routes.js";
+import authRoute from "../modules/auth/auth.routes.js";
+const router = express.Router();
+router.use("/clients", clientRoute);
+router.use("/ai", aiRoute);
+router.use("/employees", employeeRoute);
+router.use("/invoices", invoiceRoute);
+router.use("/sales-reports", salesReportRoute);
+router.use("/payments", paymentRoute);
+router.use("/auth", authRoute);
+export default router;

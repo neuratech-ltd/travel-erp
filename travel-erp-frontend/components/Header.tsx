@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Bell, Calendar, Sparkles, User, RefreshCw } from 'lucide-react'
+import { Search, Calendar, User, RefreshCw, LogOut } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
+import { api } from '../lib/api'
+import { paths } from '../routes/paths'
 
 interface HeaderProps {
   title: string
@@ -9,8 +19,10 @@ interface HeaderProps {
 }
 
 export default function Header({ title, onSearch, onRefresh, isLoading = false }: HeaderProps) {
+  const navigate = useNavigate()
   const [searchVal, setSearchVal] = useState('')
   const [dateTimeStr, setDateTimeStr] = useState('July 10, 2026 - 22:50 UTC')
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   useEffect(() => {
     const updateTimeStr = () => {
@@ -32,6 +44,20 @@ export default function Header({ title, onSearch, onRefresh, isLoading = false }
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchVal(e.target.value)
     onSearch(e.target.value)
+  }
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+
+    try {
+      await api.post('/auth/logout')
+      navigate(paths.login, { replace: true })
+    } catch (error) {
+      console.error('Failed to log out:', error)
+      window.alert('Unable to log out. Please try again.')
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   return (
@@ -87,12 +113,29 @@ export default function Header({ title, onSearch, onRefresh, isLoading = false }
         </button>
 
         <div id="header-profile-badge" className="flex items-center gap-2 border-l border-slate-200 pl-4">
-          <div
-            id="profile-avatar"
-            className="h-9 w-9 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center font-bold text-slate-700 shadow-inner"
-          >
-            <User className="h-4 w-4" />
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              id="profile-menu-trigger"
+              className="h-9 w-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 shadow-inner hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+              aria-label="Open profile menu"
+            >
+              <User className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem disabled>
+                Signed-in user
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={isLoggingOut}
+                onClick={handleLogout}
+                className="text-red-600 focus:text-red-600"
+              >
+                <LogOut className="h-4 w-4" />
+                {isLoggingOut ? 'Logging out...' : 'Log out'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

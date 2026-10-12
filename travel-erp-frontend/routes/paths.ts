@@ -4,7 +4,8 @@ export const rootPath = {
 
 export const paths = {
   root: rootPath.root,
-  dashboard: rootPath.root,
+  login: `${rootPath.root}login`,
+  dashboard: `${rootPath.root}`,
   aiConsultant: `${rootPath.root}ai-consultant`,
   airTicketInvoice: `${rootPath.root}air-ticket-invoice`,
   employees: `${rootPath.root}employees`,
