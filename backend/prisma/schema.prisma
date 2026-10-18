@@ -373,3 +373,28 @@ model SalesReportRow {
   @@index([invoiceNo])
   @@index([salesRef])
 }
+
+model IurImport {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  fileHash     String    @unique
+  fileName     String
+  sourceDevice String
+  fileSize     Int
+  status       String    @default("RECEIVED")
+  rawContent   String
+  parsedData   Json?
+  extractedData Json?
+  errorMessage String?
+  invoiceId    String?   @db.ObjectId
+  receivedAt   DateTime  @default(now())
+  processedAt  DateTime?
+
+  @@index([sourceDevice, receivedAt])
+  @@index([status, receivedAt])
+}
+
+model IurConfiguration {
+  id        String   @id @map("_id")
+  directory String
+  updatedAt DateTime @updatedAt
+}

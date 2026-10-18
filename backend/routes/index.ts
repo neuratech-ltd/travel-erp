@@ -6,6 +6,7 @@ import invoiceRoute from "../modules/invoice/invoice.routes.js";
 import salesReportRoute from "../modules/salesReport/salesReport.routes.js";
 import paymentRoute from "../modules/payment/payment.routes.js";
 import authRoute from "../modules/auth/auth.routes.js";
+import iurRoutes from "../modules/iur/iur.routes.js";
 
 const router: express.Router = express.Router();
 
@@ -16,5 +17,6 @@ router.use("/invoices", invoiceRoute);
 router.use("/sales-reports", salesReportRoute);
 router.use("/payments", paymentRoute);
 router.use("/auth", authRoute);
+router.use("/iur", iurRoutes);
 
 export default router;
