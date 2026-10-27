@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 
 type IurImport = {
   id: string
@@ -13,6 +13,35 @@ type IurImport = {
     records: Array<{ type: string; raw: string }>
   } | null
   extractedData: {
+    invoice?: {
+      ticketNo: string | null
+      pnr: string | null
+      route: string | null
+      class: string | null
+      baseFare: number | null
+      taxesCommission: number | null
+      aitTax: number | null
+      clientPrice: number | null
+      commission: number | null
+      calculatedCommission: number | null
+      purchaseCost: number | null
+      netCommission: number | null
+      discount: number | null
+      extraFee: number | null
+      profit: number | null
+      passengerName: string | null
+      passengerType: string | null
+      passportNo: string | null
+      contactNo: string | null
+      passengerEmail: string | null
+      dateOfBirth: string | null
+      passportIssueDate: string | null
+      passportExpiryDate: string | null
+      journeyDate: string | null
+      returnDate: string | null
+      travelSegment: string | null
+      ticketingRemarks: string | null
+    }
     passenger: { name: string | null }
     ticket: { number: string | null; currency: string | null; baseAmount: number | null }
     itinerary: Array<unknown>
@@ -180,7 +209,13 @@ export default function IurImports() {
               <th className="p-3">File</th>
               <th className="p-3">Passenger</th>
               <th className="p-3">Ticket</th>
-              <th className="p-3">Source PC</th>
+              <th className="p-3">PNR</th>
+              <th className="p-3">Route</th>
+              <th className="p-3">Class</th>
+              <th className="p-3">Base fare</th>
+              <th className="p-3">Passenger type</th>
+              <th className="p-3">Contact</th>
+              <th className="p-3">Journey date</th>
               <th className="p-3">Status</th>
               <th className="p-3">Records</th>
               <th className="p-3">Imported at</th>
@@ -188,28 +223,54 @@ export default function IurImports() {
           </thead>
 
           <tbody>
-            {data?.items.map((item) => (
-              <tr key={item.id} className="border-b">
+            {data?.items.map((item) => {
+              const invoice = item.extractedData?.invoice
+              return (
+                <Fragment key={item.id}>
+                  <tr className="border-b">
                 <td className="p-3">{item.fileName}</td>
-                <td className="p-3">{item.extractedData?.passenger.name ?? '-'}</td>
-                <td className="p-3">{item.extractedData?.ticket.number ?? '-'}</td>
-                {item.extractedData?.ticket.baseAmount && item.extractedData?.ticket.currency ? (
-                  <td className="p-3">
-                    {item.extractedData.ticket.baseAmount} {item.extractedData.ticket.currency}
-                  </td>
-                ) : (
-                  <td className="p-3">-</td>
-                )}
-                <td className="p-3">{item.sourceDevice}</td>
+                <td className="p-3">{invoice?.passengerName ?? item.extractedData?.passenger.name ?? '-'}</td>
+                <td className="p-3">{invoice?.ticketNo ?? item.extractedData?.ticket.number ?? '-'}</td>
+                <td className="p-3">{invoice?.pnr ?? '-'}</td>
+                <td className="p-3">{invoice?.route ?? '-'}</td>
+                <td className="p-3">{invoice?.class ?? '-'}</td>
+                <td className="p-3">{invoice?.baseFare ?? '-'}</td>
+                <td className="p-3">{invoice?.passengerType ?? '-'}</td>
+                <td className="p-3">{invoice?.contactNo ?? '-'}</td>
+                <td className="p-3">{invoice?.journeyDate ?? '-'}</td>
                 <td className="p-3">{item.status}</td>
                 <td className="p-3">{item.parsedData?.records.length ?? 0}</td>
                 <td className="p-3">{new Date(item.receivedAt).toLocaleString()}</td>
-              </tr>
-            ))}
+                  </tr>
+                  <tr>
+                <td colSpan={13} className="border-t bg-gray-50 p-3">
+                  <div className="grid min-w-[900px] grid-cols-4 gap-2 text-xs">
+                    <span>Taxes commission: {invoice?.taxesCommission ?? '-'}</span>
+                    <span>AIT tax: {invoice?.aitTax ?? '-'}</span>
+                    <span>Client price: {invoice?.clientPrice ?? '-'}</span>
+                    <span>Commission: {invoice?.commission ?? '-'}</span>
+                    <span>Calculated commission: {invoice?.calculatedCommission ?? '-'}</span>
+                    <span>Purchase cost: {invoice?.purchaseCost ?? '-'}</span>
+                    <span>Net commission: {invoice?.netCommission ?? '-'}</span>
+                    <span>Profit: {invoice?.profit ?? '-'}</span>
+                    <span>Passport no: {invoice?.passportNo ?? '-'}</span>
+                    <span>Email: {invoice?.passengerEmail ?? '-'}</span>
+                    <span>Date of birth: {invoice?.dateOfBirth ?? '-'}</span>
+                    <span>Passport issue: {invoice?.passportIssueDate ?? '-'}</span>
+                    <span>Passport expiry: {invoice?.passportExpiryDate ?? '-'}</span>
+                    <span>Return date: {invoice?.returnDate ?? '-'}</span>
+                    <span>Travel segment: {invoice?.travelSegment ?? '-'}</span>
+                    <span>Remarks: {invoice?.ticketingRemarks ?? '-'}</span>
+                  </div>
+                </td>
+                  </tr>
+                </Fragment>
+              )
+            })}
 
             {data?.items.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-4 text-center">
+                <td colSpan={13} className="p-4 text-center">
                   No IUR imports found.
                 </td>
               </tr>

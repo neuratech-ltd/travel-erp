@@ -4,6 +4,7 @@ import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '../ui/combobox'
 import SuccessPopup from '../common/SuccessPopup'
 import { api } from '../../lib/api'
+import { IurSuggestionOptions, IurSuggestionStatus, useIurSuggestions } from './IurSuggestions'
 
 interface NonCommissionFormProps {
   employeesList: { id: number; name: string }[]
@@ -84,6 +85,7 @@ const computeRow = (passenger: PassengerRow) => {
 }
 
 const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProps) => {
+  const iur = useIurSuggestions()
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [successOpen, setSuccessOpen] = React.useState(false)
   const [successDetail, setSuccessDetail] = React.useState('')
@@ -173,6 +175,14 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} id="non-commission-invoice-form" className="space-y-6">
+      <IurSuggestionStatus error={iur.error} />
+      <IurSuggestionOptions id={iur.listId('ticketNo')} values={iur.values('ticketNo')} />
+      <IurSuggestionOptions id={iur.listId('pnr')} values={iur.values('pnr')} />
+      <IurSuggestionOptions id={iur.listId('route')} values={iur.values('route')} />
+      <IurSuggestionOptions id={iur.listId('passengerName')} values={iur.values('passengerName')} />
+      <IurSuggestionOptions id={iur.listId('passportNo')} values={iur.values('passportNo')} />
+      <IurSuggestionOptions id={iur.listId('contactNo')} values={iur.values('contactNo')} />
+      <IurSuggestionOptions id={iur.listId('passengerEmail')} values={iur.values('passengerEmail')} />
       <SuccessPopup
         open={successOpen}
         title="Non-commission invoice saved"
@@ -285,6 +295,7 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                 <Field label="Ticket No *" error={passengerErrors?.ticketNo?.message}>
                   <input
                     type="text"
+                    list={iur.listId('ticketNo')}
                     {...register(fieldName('ticketNo'), {
                       required: 'Ticket number is required',
                       validate: (value) => {
@@ -301,6 +312,7 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                 <Field label="PNR *" error={passengerErrors?.pnr?.message}>
                   <input
                     type="text"
+                    list={iur.listId('pnr')}
                     placeholder="e.g. ABC123"
                     {...register(fieldName('pnr'), {
                       required: 'PNR is required',
@@ -315,6 +327,7 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                 <Field label="Route / Sector *" error={passengerErrors?.route?.message}>
                   <input
                     type="text"
+                    list={iur.listId('route')}
                     {...register(fieldName('route'), { required: 'Route is required' })}
                     className={inputClass}
                   />
@@ -322,6 +335,7 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                 <Field label="Gross Fare (Sale)">
                   <input
                     type="number"
+                    list={iur.listId('baseFare')}
                     step="0.01"
                     {...register(fieldName('grossFare'), { valueAsNumber: true })}
                     className={inputClass}
@@ -333,6 +347,7 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                 <Field label="Taxes Commission %">
                   <input
                     type="number"
+                    list={iur.listId('taxesCommission')}
                     step="0.01"
                     {...register(fieldName('taxesCommission'), { valueAsNumber: true })}
                     className={inputClass}
@@ -341,6 +356,7 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                 <Field label="AIT Tax %">
                   <input
                     type="number"
+                    list={iur.listId('aitTax')}
                     step="0.01"
                     {...register(fieldName('aitTax'), { valueAsNumber: true })}
                     className={inputClass}
@@ -349,6 +365,7 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                 <Field label="Total Client Price *" error={passengerErrors?.clientPrice?.message}>
                   <input
                     type="number"
+                    list={iur.listId('clientPrice')}
                     step="0.01"
                     {...register(fieldName('clientPrice'), {
                       required: 'Client price is required',
@@ -360,6 +377,7 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                 <Field label="Discount">
                   <input
                     type="number"
+                    list={iur.listId('discount')}
                     step="0.01"
                     {...register(fieldName('discount'), { valueAsNumber: true })}
                     className={inputClass}
@@ -368,6 +386,7 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                 <Field label="Extra Fee / Service Charge">
                   <input
                     type="number"
+                    list={iur.listId('extraFee')}
                     step="0.01"
                     {...register(fieldName('extraFee'), { valueAsNumber: true })}
                     className={inputClass}
@@ -393,6 +412,7 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                 <Field label="Passenger Name *" error={passengerErrors?.passengerName?.message}>
                   <input
                     type="text"
+                    list={iur.listId('passengerName')}
                     {...register(fieldName('passengerName'), { required: 'Passenger name is required' })}
                     className={inputClass}
                   />
@@ -405,13 +425,13 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                   </select>
                 </Field>
                 <Field label="Passport No">
-                  <input type="text" {...register(fieldName('passportNo'))} className={inputClass} />
+                  <input type="text" list={iur.listId('passportNo')} {...register(fieldName('passportNo'))} className={inputClass} />
                 </Field>
                 <Field label="Contact No">
-                  <input type="text" {...register(fieldName('contactNo'))} className={inputClass} />
+                  <input type="text" list={iur.listId('contactNo')} {...register(fieldName('contactNo'))} className={inputClass} />
                 </Field>
                 <Field label="Passenger Email">
-                  <input type="email" {...register(fieldName('passengerEmail'))} className={inputClass} />
+                  <input type="email" list={iur.listId('passengerEmail')} {...register(fieldName('passengerEmail'))} className={inputClass} />
                 </Field>
                 <Field label="Date of Birth">
                   <input type="date" {...register(fieldName('dateOfBirth'))} className={inputClass} />

@@ -3,6 +3,8 @@ import {
   importIurController,
   listIurImportsController,
   getIurImportController,
+  getIurSuggestionsController,
+  getIurImportByTicketController,
   scanIurDirectoryController,
   getIurConfigurationController,
   saveIurConfigurationController,
@@ -38,6 +40,10 @@ router.get("/configuration", getIurConfigurationController);
 router.put("/configuration", saveIurConfigurationController);
 
 router.get("/imports", listIurImportsController);
+
+router.get("/suggestions", getIurSuggestionsController);
+
+router.get("/imports/by-ticket/:ticketNumber", getIurImportByTicketController);
 
 router.get("/imports/:id", getIurImportController);
 

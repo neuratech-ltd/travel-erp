@@ -384,9 +384,7 @@ const buildPassengerRecord = (p: PassengerInput) => {
   const calculatedCommission = Number(
     ((baseFare * commissionPct) / 100).toFixed(2),
   );
-  const taxesCommissionAmount = Number(
-    ((baseFare * taxesCommission) / 100).toFixed(2),
-  );
+  const taxesCommissionAmount = Number(taxesCommission.toFixed(2));
   const aitTaxAmount = Number(((baseFare * aitTax) / 100).toFixed(2));
   const purchaseCost = Number(
     (

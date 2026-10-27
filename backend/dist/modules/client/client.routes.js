@@ -1,8 +1,0 @@
-import express from 'express';
-import * as clientController from './client.controller.js';
-const router = express.Router();
-router.get('/', clientController.getClients);
-router.post('/', clientController.createClientController);
-router.get('/:id', clientController.getClientByIdController);
-router.put('/:id', clientController.updateClientController);
-export default router;

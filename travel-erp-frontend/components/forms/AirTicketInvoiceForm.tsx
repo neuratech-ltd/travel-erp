@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Controller, useForm, useFieldArray, useWatch } from 'react-hook-form'
 import { User, Calendar, DollarSign, Save, Plus, Trash2 } from 'lucide-react'
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '../ui/combobox'
 import SuccessPopup from '../common/SuccessPopup'
 import { api } from '../../lib/api'
+import { IurSuggestionOptions, IurSuggestionStatus, useIurSuggestions } from './IurSuggestions'
 
 interface AirTicketInvoiceFormProps {
   employeesList: { id: number; name: string }[]
@@ -80,7 +81,7 @@ const computeRow = (p: PassengerRow) => {
   const extraFee = Number(p.extraFee) || 0
 
   const calculatedCommission = Number(((baseFare * commissionPct) / 100).toFixed(2))
-  const taxesCommissionAmount = Number(((baseFare * taxesCommission) / 100).toFixed(2))
+  const taxesCommissionAmount = Number(taxesCommission.toFixed(2))
   const aitTaxAmount = Number(((baseFare * aitTax) / 100).toFixed(2))
   const purchaseCost = Number((baseFare + taxesCommissionAmount + aitTaxAmount - calculatedCommission).toFixed(2))
   const netCommission = Number((calculatedCommission - extraFee).toFixed(2))
@@ -90,6 +91,7 @@ const computeRow = (p: PassengerRow) => {
 }
 
 const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFormProps) => {
+  const iur = useIurSuggestions()
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [successOpen, setSuccessOpen] = React.useState(false)
   const [successDetail, setSuccessDetail] = React.useState('')
@@ -102,6 +104,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
     reset,
     formState: { errors },
     getValues,
+    setValue,
   } = useForm<FormValues>({
     defaultValues: {
       clientName: '',
@@ -114,6 +117,8 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
 
   const { fields, append, remove } = useFieldArray({ control, name: 'passengers' })
   const watchedPassengers = useWatch({ control, name: 'passengers' })
+  const [loadingIur, setLoadingIur] = useState(false)
+  const [iurMessage, setIurMessage] = useState('')
 
   useEffect(() => {
     if (!successOpen) return
@@ -136,11 +141,111 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
     )
   }, [watchedPassengers])
 
+  const loadIurForTicket = async (ticketNumber: string, passengerIndex: number) => {
+    if (ticketNumber.replace(/[\s-]/g, '').length < 10) return
+
+      setLoadingIur(true)
+      setIurMessage('')
+
+      try {
+        const { data: imported } = await api.get(`/iur/imports/by-ticket/${encodeURIComponent(ticketNumber.trim())}`)
+        const invoice = imported?.extractedData?.invoice
+        const passenger = imported?.extractedData?.passenger
+        const ticket = imported?.extractedData?.ticket
+        const itinerary = imported?.extractedData?.itinerary?.[0]
+
+        if (!invoice && !passenger && !ticket) throw new Error('No extracted IUR data is available')
+
+        const value = (candidate: unknown) =>
+          candidate === null || candidate === undefined || candidate === '' ? undefined : candidate
+        const dateValue = (candidate: unknown) => {
+          if (typeof candidate !== 'string') return undefined
+          const isoDate = candidate.match(/^\d{4}-\d{2}-\d{2}$/)
+          if (isoDate) return candidate
+
+          const compactDate = candidate.match(/^(\d{2})([A-Z]{3})(\d{2,4})$/i)
+          if (!compactDate) return candidate
+
+          const months: Record<string, string> = {
+            JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06',
+            JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12',
+          }
+          const year = compactDate[3].length === 2 ? `20${compactDate[3]}` : compactDate[3]
+          const month = months[compactDate[2].toUpperCase()]
+          return month ? `${year}-${month}-${compactDate[1]}` : candidate
+        }
+        const classValue = (candidate: unknown) => {
+          if (typeof candidate !== 'string') return undefined
+          const classes: Record<string, string> = {
+            Y: 'Economy', W: 'Premium Economy', J: 'Business', C: 'Business', D: 'Business', F: 'First Class',
+          }
+          return classes[candidate.toUpperCase()] ?? (
+            ['Economy', 'Premium Economy', 'Business', 'First Class'].includes(candidate)
+              ? candidate
+              : undefined
+          )
+        }
+
+        const fieldsToSet: Array<[keyof PassengerRow, unknown]> = [
+          ['ticketNo', value(invoice?.ticketNo ?? ticket?.number)],
+          ['pnr', value(invoice?.pnr ?? imported?.extractedData?.bookingReference)],
+          ['route', value(invoice?.route)],
+          ['ticketClass', classValue(invoice?.class ?? itinerary?.bookingClass)],
+          ['baseFare', value(invoice?.baseFare ?? ticket?.baseAmount)],
+          ['taxesCommission', value(invoice?.taxesCommission)],
+          ['aitTax', value(invoice?.aitTax)],
+          ['clientPrice', value(invoice?.clientPrice)],
+          ['commissionPct', value(invoice?.commission)],
+          ['discountGiven', value(invoice?.discount)],
+          ['extraFee', value(invoice?.extraFee)],
+          ['passengerName', value(invoice?.passengerName ?? passenger?.name)],
+          ['passengerType', value(invoice?.passengerType)],
+          ['passportNo', value(invoice?.passportNo)],
+          ['contactNo', value(invoice?.contactNo)],
+          ['passengerEmail', value(invoice?.passengerEmail)],
+          ['dateOfBirth', dateValue(invoice?.dateOfBirth)],
+          ['passportIssueDate', dateValue(invoice?.passportIssueDate)],
+          ['passportExpiryDate', dateValue(invoice?.passportExpiryDate)],
+          ['journeyDate', dateValue(invoice?.journeyDate ?? itinerary?.date)],
+          ['returnDate', dateValue(invoice?.returnDate)],
+          ['travelSegment', value(invoice?.travelSegment)],
+          ['ticketingRemarks', value(invoice?.ticketingRemarks)],
+        ]
+
+        for (const [field, fieldValue] of fieldsToSet) {
+          if (fieldValue !== undefined) {
+            setValue(`passengers.${passengerIndex}.${field}`, fieldValue as never, { shouldDirty: true })
+          }
+        }
+
+        if (ticket?.airline) {
+          const airlineNames: Record<string, string> = {
+            BG: 'US-Bangla Airlines',
+            EK: 'Emirates',
+            QR: 'Qatar Airways',
+            SQ: 'Singapore Airlines',
+            TK: 'Turkish Airlines',
+          }
+          const airline = airlineNames[ticket.airline] ?? ticket.airline
+          if (['Emirates', 'Qatar Airways', 'Singapore Airlines', 'Turkish Airlines', 'US-Bangla Airlines'].includes(airline)) {
+            setValue('airline', airline, { shouldDirty: true })
+          }
+        }
+
+        setIurMessage(`Loaded extracted data from ${imported.fileName}. Missing values were left unchanged.`)
+      } catch (error) {
+        setIurMessage(error instanceof Error ? error.message : 'Unable to load IUR data')
+      } finally {
+        setLoadingIur(false)
+      }
+  }
+
   const createInvoice = async (invoiceData: any) => {
     const { data } = await api.post('/invoices/air-ticket', invoiceData)
     if (!data.success) {
       throw new Error(data.message || 'Failed to create invoice')
     }
+
     return data
   }
 
@@ -203,6 +308,17 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} id="ticket-invoice-form" className="space-y-6">
+      <IurSuggestionStatus error={iur.error} />
+      {iurMessage && <p className="text-xs text-slate-500" role="status">{iurMessage}</p>}
+      <IurSuggestionOptions id={iur.listId('ticketNo')} values={iur.values('ticketNo')} />
+      <IurSuggestionOptions id={iur.listId('pnr')} values={iur.values('pnr')} />
+      <IurSuggestionOptions id={iur.listId('route')} values={iur.values('route')} />
+      <IurSuggestionOptions id={iur.listId('passengerName')} values={iur.values('passengerName')} />
+      <IurSuggestionOptions id={iur.listId('passportNo')} values={iur.values('passportNo')} />
+      <IurSuggestionOptions id={iur.listId('contactNo')} values={iur.values('contactNo')} />
+      <IurSuggestionOptions id={iur.listId('passengerEmail')} values={iur.values('passengerEmail')} />
+      <IurSuggestionOptions id={iur.listId('travelSegment')} values={iur.values('travelSegment')} />
+      <IurSuggestionOptions id={iur.listId('ticketingRemarks')} values={iur.values('ticketingRemarks')} />
       <SuccessPopup
         open={successOpen}
         title="Air ticket invoice saved"
@@ -299,6 +415,16 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
         const row = watchedPassengers?.[index] ?? emptyPassenger
         const { calculatedCommission, purchaseCost, netCommission, profit } = computeRow(row)
         const passengerErrors = errors.passengers?.[index]
+        const ticketNoField = register(`passengers.${index}.ticketNo`, {
+          required: 'Ticket number is required',
+          validate: (value) => {
+            const ticketNumbers = getValues('passengers').map((passenger) => passenger.ticketNo)
+            return (
+              ticketNumbers.filter((ticketNo) => ticketNo === value).length <= 1 ||
+              'Duplicate ticket number in this invoice'
+            )
+          },
+        })
 
         return (
           <div key={field.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 space-y-4">
@@ -330,17 +456,13 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">Ticket No *</label>
                   <input
                     type="text"
+                    list={iur.listId('ticketNo')}
                     placeholder="e.g. 997-38592038"
-                    {...register(`passengers.${index}.ticketNo`, {
-                      required: 'Ticket number is required',
-                      validate: (value) => {
-                        const ticketNumbers = getValues('passengers').map((passenger) => passenger.ticketNo)
-                        return (
-                          ticketNumbers.filter((ticketNo) => ticketNo === value).length <= 1 ||
-                          'Duplicate ticket number in this invoice'
-                        )
-                      },
-                    })}
+                    {...ticketNoField}
+                    onChange={(event) => {
+                      void ticketNoField.onChange(event)
+                      void loadIurForTicket(event.target.value, index)
+                    }}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
                   />
                   {passengerErrors?.ticketNo && (
@@ -352,6 +474,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">PNR *</label>
                   <input
                     type="text"
+                    list={iur.listId('pnr')}
                     placeholder="e.g. ABC123"
                     {...register(`passengers.${index}.pnr`, {
                       required: 'PNR is required',
@@ -370,6 +493,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">Route / Sector *</label>
                   <input
                     type="text"
+                    list={iur.listId('route')}
                     placeholder="e.g. DAC-DXB"
                     {...register(`passengers.${index}.route`, { required: true })}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
@@ -394,15 +518,17 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">Base Fare (Buy) *</label>
                   <input
                     type="number"
+                    list={iur.listId('baseFare')}
                     step="0.01"
                     {...register(`passengers.${index}.baseFare`, { required: true, valueAsNumber: true })}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-500 font-bold mb-1">Taxes Commission %</label>
+                  <label className="block text-slate-500 font-bold mb-1">Taxes / Commission Amount</label>
                   <input
                     type="number"
+                    list={iur.listId('taxesCommission')}
                     step="0.01"
                     {...register(`passengers.${index}.taxesCommission`, { valueAsNumber: true })}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
@@ -412,6 +538,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">AIT Tax %</label>
                   <input
                     type="number"
+                    list={iur.listId('aitTax')}
                     step="0.01"
                     {...register(`passengers.${index}.aitTax`, { valueAsNumber: true })}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
@@ -421,6 +548,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">Client Price *</label>
                   <input
                     type="number"
+                    list={iur.listId('clientPrice')}
                     step="0.01"
                     {...register(`passengers.${index}.clientPrice`, { required: true, valueAsNumber: true })}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
@@ -431,6 +559,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">Commission %</label>
                   <input
                     type="number"
+                    list={iur.listId('discount')}
                     step="0.01"
                     {...register(`passengers.${index}.commissionPct`, { valueAsNumber: true })}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
@@ -440,6 +569,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">Calculated Commission</label>
                   <input
                     type="number"
+                    list={iur.listId('extraFee')}
                     value={calculatedCommission}
                     readOnly
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-100 text-slate-600 outline-none font-semibold"
@@ -502,6 +632,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">Passenger Name *</label>
                   <input
                     type="text"
+                    list={iur.listId('passengerName')}
                     placeholder="John Doe"
                     {...register(`passengers.${index}.passengerName`, { required: true })}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
@@ -523,6 +654,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">Passport No</label>
                   <input
                     type="text"
+                    list={iur.listId('passportNo')}
                     placeholder="e.g. A048592"
                     {...register(`passengers.${index}.passportNo`)}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
@@ -532,6 +664,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">Contact No</label>
                   <input
                     type="text"
+                    list={iur.listId('contactNo')}
                     placeholder="+8801..."
                     {...register(`passengers.${index}.contactNo`)}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
@@ -542,6 +675,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">Passenger Email</label>
                   <input
                     type="email"
+                    list={iur.listId('passengerEmail')}
                     placeholder="pax@domain.com"
                     {...register(`passengers.${index}.passengerEmail`)}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
@@ -601,6 +735,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">Travel Segment</label>
                   <input
                     type="text"
+                    list={iur.listId('travelSegment')}
                     placeholder="e.g. DAC-DXB"
                     {...register(`passengers.${index}.travelSegment`)}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
@@ -610,6 +745,7 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
                   <label className="block text-slate-500 font-bold mb-1">Ticketing Remarks</label>
                   <input
                     type="text"
+                    list={iur.listId('ticketingRemarks')}
                     placeholder="FBA: 30Kgs, No refunds"
                     {...register(`passengers.${index}.ticketingRemarks`)}
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"

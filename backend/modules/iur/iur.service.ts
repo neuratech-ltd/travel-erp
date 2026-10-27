@@ -111,6 +111,103 @@ export async function setConfiguredIurDirectory(directory: string) {
   });
 }
 
+export async function getIurSuggestions() {
+  const imports = await prisma.iurImport.findMany({
+    orderBy: { receivedAt: "desc" },
+    take: 10,
+    select: { extractedData: true },
+  });
+
+  const suggestions: Record<string, string[]> = {};
+  const fields = [
+    "passengerName",
+    "passengerType",
+    "passportNo",
+    "contactNo",
+    "passengerEmail",
+    "dateOfBirth",
+    "passportIssueDate",
+    "passportExpiryDate",
+    "ticketNo",
+    "pnr",
+    "route",
+    "class",
+    "journeyDate",
+    "returnDate",
+    "travelSegment",
+    "ticketingRemarks",
+    "baseFare",
+    "taxesCommission",
+    "aitTax",
+    "clientPrice",
+    "commission",
+    "calculatedCommission",
+    "purchaseCost",
+    "netCommission",
+    "discount",
+    "extraFee",
+    "profit",
+    "airline",
+  ];
+
+  for (const field of fields) {
+    const values = imports
+      .map((item) => {
+        const extracted = asRecord(item.extractedData);
+        const invoice = asRecord(extracted?.invoice);
+        if (field === "airline") {
+          const ticket = asRecord(extracted?.ticket);
+          return ticket?.airline;
+        }
+
+        return invoice?.[field];
+      })
+      .filter((value): value is string | number => typeof value === "string" || typeof value === "number")
+      .map((value) => String(value).trim())
+      .filter(Boolean);
+
+    suggestions[field] = [...new Set(values)].slice(0, 10);
+  }
+
+  return suggestions;
+}
+
+export async function findIurImportByTicketNumber(ticketNumber: string) {
+  const imports = await prisma.iurImport.findMany({
+    orderBy: { receivedAt: "desc" },
+    select: {
+      id: true,
+      fileName: true,
+      sourceDevice: true,
+      fileSize: true,
+      status: true,
+      parsedData: true,
+      extractedData: true,
+      errorMessage: true,
+      invoiceId: true,
+      receivedAt: true,
+      processedAt: true,
+    },
+  });
+
+  const normalizedTicketNumber = ticketNumber.replace(/[\s-]/g, "").toUpperCase();
+  return imports.find((item) => {
+    const extracted = asRecord(item.extractedData);
+    const invoice = asRecord(extracted?.invoice);
+    const ticket = asRecord(extracted?.ticket);
+    const extractedTicket = invoice?.ticketNo ?? ticket?.number;
+
+    return typeof extractedTicket === "string" &&
+      extractedTicket.replace(/[\s-]/g, "").toUpperCase() === normalizedTicketNumber;
+  }) ?? null;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
 export function scanIurDirectory() {
   if (activeScan) {
     return activeScan;

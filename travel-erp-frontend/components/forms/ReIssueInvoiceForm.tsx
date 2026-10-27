@@ -3,6 +3,7 @@ import { Calendar, DollarSign, Plus, Save, Trash2 } from 'lucide-react'
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '../ui/combobox'
 import SuccessPopup from '../common/SuccessPopup'
 import { api } from '../../lib/api'
+import { IurSuggestionOptions, IurSuggestionStatus, useIurSuggestions } from './IurSuggestions'
 
 interface ReIssueInvoiceFormProps {
   employeesList: { id: number; name: string }[]
@@ -23,6 +24,7 @@ interface ReIssueInvoiceFormProps {
 }
 
 const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormProps) => {
+  const iur = useIurSuggestions()
   const [passengers, setPassengers] = useState([
     { passengerName: '', ticketNo: '', pnr: '', route: '', penalties: 0, fareDifference: 0, taxDifference: 0 },
   ])
@@ -130,6 +132,13 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <IurSuggestionStatus error={iur.error} />
+      <IurSuggestionOptions id={iur.listId('passengerName')} values={iur.values('passengerName')} />
+      <IurSuggestionOptions id={iur.listId('ticketNo')} values={iur.values('ticketNo')} />
+      <IurSuggestionOptions id={iur.listId('pnr')} values={iur.values('pnr')} />
+      <IurSuggestionOptions id={iur.listId('route')} values={iur.values('route')} />
+      <IurSuggestionOptions id={iur.listId('extraFee')} values={iur.values('extraFee')} />
+      <IurSuggestionOptions id={iur.listId('discount')} values={iur.values('discount')} />
       <SuccessPopup
         open={successOpen}
         title="Reissue invoice saved"
@@ -219,6 +228,7 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
                     {field === 'passengerName' ? 'Passenger Name *' : field.toUpperCase()}
                   </label>
                   <input
+                    list={iur.listId(field)}
                     value={passenger[field]}
                     required
                     onChange={(event) =>
@@ -291,6 +301,7 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
             <input
               name="extraFee"
               type="number"
+              list={iur.listId('extraFee')}
               onChange={(e) => setExtraFee(Number(e.target.value) || 0)}
               className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
             />
@@ -300,6 +311,7 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
             <input
               name="discount"
               type="number"
+              list={iur.listId('discount')}
               onChange={(e) => setDiscount(Number(e.target.value) || 0)}
               className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
             />
@@ -334,6 +346,7 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
             <input
               type="text"
               name="route"
+              list={iur.listId('route')}
               // onChange={(e) => setRoute(e.target.value)}
               className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
               required
@@ -344,6 +357,7 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
             <input
               type="text"
               name="pnr"
+              list={iur.listId('pnr')}
               // value={pnr}
               // onChange={(e) => setPnr(e.target.value)}
               className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 uppercase outline-none"

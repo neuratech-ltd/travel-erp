@@ -3,6 +3,8 @@ import type { Request, Response, NextFunction } from "express";
 import { prisma } from "../../lib/prisma.js";
 import {
   getConfiguredIurDirectory,
+  getIurSuggestions,
+  findIurImportByTicketNumber,
   getIurDirectory,
   importIurFile,
   scanIurDirectory,
@@ -227,6 +229,40 @@ export async function getIurImportController(
     }
 
     return res.json(item);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getIurImportByTicketController(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    const ticketNumber = req.params.ticketNumber?.trim();
+    if (!ticketNumber) {
+      return res.status(400).json({ message: "Ticket number is required" });
+    }
+
+    const item = await findIurImportByTicketNumber(ticketNumber);
+    if (!item) {
+      return res.status(404).json({ message: "No imported IUR matches this ticket number" });
+    }
+
+    return res.json(item);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getIurSuggestionsController(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  try {
+    return res.json({ suggestions: await getIurSuggestions() });
   } catch (error) {
     next(error);
   }
