@@ -95,6 +95,7 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
     getValues,
   } = useForm<FormValues>({
@@ -102,6 +103,73 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
   })
   const { fields, append, remove } = useFieldArray({ control, name: 'passengers' })
   const watchedPassengers = useWatch({ control, name: 'passengers' })
+  const [loadingIur, setLoadingIur] = React.useState(false)
+  const [iurMessage, setIurMessage] = React.useState('')
+
+  const loadIurForTicket = async (ticketNumber: string, passengerIndex: number) => {
+    if (ticketNumber.replace(/[\s-]/g, '').length < 10) return
+
+    setLoadingIur(true)
+    setIurMessage('')
+    try {
+      const { data: imported } = await api.get(`/iur/imports/by-ticket/${encodeURIComponent(ticketNumber.trim())}`)
+      const invoice = imported?.extractedData?.invoice
+      const passenger = imported?.extractedData?.passenger
+      const ticket = imported?.extractedData?.ticket
+      if (!invoice && !passenger && !ticket) throw new Error('No extracted IUR data is available')
+
+      const value = (candidate: unknown) =>
+        candidate === null || candidate === undefined || candidate === '' ? undefined : candidate
+      const dateValue = (candidate: unknown) => {
+        if (typeof candidate !== 'string') return undefined
+        const compactDate = candidate.match(/^(\d{2})([A-Z]{3})(\d{2,4})$/i)
+        if (!compactDate) return candidate
+        const months: Record<string, string> = {
+          JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06',
+          JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12',
+        }
+        const month = months[compactDate[2].toUpperCase()]
+        const year = compactDate[3].length === 2 ? `20${compactDate[3]}` : compactDate[3]
+        return month ? `${year}-${month}-${compactDate[1]}` : candidate
+      }
+      const airlineNames: Record<string, string> = {
+        BG: 'US-Bangla Airlines', EK: 'Emirates', QR: 'Qatar Airways', SQ: 'Singapore Airlines', TK: 'Turkish Airlines',
+      }
+      const airline = ticket?.airline
+        ? airlineNames[String(ticket.airline).toUpperCase()] ?? ticket.airline
+        : undefined
+      const fields: Array<[keyof PassengerRow, unknown]> = [
+        ['ticketNo', value(invoice?.ticketNo ?? ticket?.number)],
+        ['pnr', value(invoice?.pnr ?? imported?.extractedData?.bookingReference)],
+        ['route', value(invoice?.route)],
+        ['grossFare', value(invoice?.baseFare ?? ticket?.baseAmount)],
+        ['taxesCommission', value(invoice?.taxesCommission)],
+        ['aitTax', value(invoice?.aitTax)],
+        ['clientPrice', value(invoice?.clientPrice)],
+        ['discount', value(invoice?.discount)],
+        ['extraFee', value(invoice?.extraFee)],
+        ['passengerName', value(invoice?.passengerName ?? passenger?.name)],
+        ['passengerType', value(invoice?.passengerType)],
+        ['passportNo', value(invoice?.passportNo)],
+        ['contactNo', value(invoice?.contactNo)],
+        ['passengerEmail', value(invoice?.passengerEmail)],
+        ['dateOfBirth', dateValue(invoice?.dateOfBirth)],
+        ['passportIssueDate', dateValue(invoice?.passportIssueDate)],
+        ['passportExpiryDate', dateValue(invoice?.passportExpiryDate)],
+        ['journeyDate', dateValue(invoice?.journeyDate)],
+        ['returnDate', dateValue(invoice?.returnDate)],
+      ]
+      for (const [field, fieldValue] of fields) {
+        if (fieldValue !== undefined) setValue(`passengers.${passengerIndex}.${field}`, fieldValue as never, { shouldDirty: true })
+      }
+      if (airline) setValue('airline', airline, { shouldDirty: true })
+      setIurMessage(`Loaded extracted data from ${imported.fileName}. Missing values were left unchanged.`)
+    } catch (error) {
+      setIurMessage(error instanceof Error ? error.message : 'Unable to load IUR data')
+    } finally {
+      setLoadingIur(false)
+    }
+  }
 
   useEffect(() => {
     if (!successOpen) return
@@ -176,6 +244,7 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
   return (
     <form onSubmit={handleSubmit(onSubmit)} id="non-commission-invoice-form" className="space-y-6">
       <IurSuggestionStatus error={iur.error} />
+      {iurMessage && <p className="text-xs text-slate-500" role="status">{loadingIur ? 'Loading IUR data...' : iurMessage}</p>}
       <IurSuggestionOptions id={iur.listId('ticketNo')} values={iur.values('ticketNo')} />
       <IurSuggestionOptions id={iur.listId('pnr')} values={iur.values('pnr')} />
       <IurSuggestionOptions id={iur.listId('route')} values={iur.values('route')} />
@@ -307,6 +376,10 @@ const NonCommissionForm = ({ employeesList, clientsList }: NonCommissionFormProp
                       },
                     })}
                     className={inputClass}
+                    onChange={(event) => {
+                      setValue(`passengers.${index}.ticketNo`, event.target.value, { shouldDirty: true })
+                      void loadIurForTicket(event.target.value, index)
+                    }}
                   />
                 </Field>
                 <Field label="PNR *" error={passengerErrors?.pnr?.message}>

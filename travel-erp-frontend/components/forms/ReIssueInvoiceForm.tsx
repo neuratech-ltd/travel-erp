@@ -34,6 +34,72 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successOpen, setSuccessOpen] = useState(false)
   const [successDetail, setSuccessDetail] = useState('')
+  const [iurMessage, setIurMessage] = useState('')
+  const [loadingIur, setLoadingIur] = useState(false)
+  const formRef = React.useRef<HTMLFormElement>(null)
+
+  const setFormValue = (name: string, value: string | undefined) => {
+    if (value === undefined) return
+    const field = formRef.current?.elements.namedItem(name)
+    if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) {
+      field.value = value
+    }
+  }
+
+  const loadIurForTicket = async (ticketNumber: string, passengerIndex: number) => {
+    if (ticketNumber.replace(/[\s-]/g, '').length < 10) return
+    setLoadingIur(true)
+    setIurMessage('')
+    try {
+      const { data: imported } = await api.get(`/iur/imports/by-ticket/${encodeURIComponent(ticketNumber.trim())}`)
+      const invoice = imported?.extractedData?.invoice
+      const passenger = imported?.extractedData?.passenger
+      const ticket = imported?.extractedData?.ticket
+      const itinerary = imported?.extractedData?.itinerary?.[0]
+      if (!invoice && !passenger && !ticket) throw new Error('No extracted IUR data is available')
+
+      const value = (candidate: unknown) =>
+        candidate === null || candidate === undefined || candidate === '' ? undefined : String(candidate)
+      const airlineNames: Record<string, string> = {
+        BG: 'US-Bangla Airlines', EK: 'Emirates', QR: 'Qatar Airways', SQ: 'Singapore Airlines', TK: 'Turkish Airlines',
+      }
+      const airline = ticket?.airline
+        ? airlineNames[String(ticket.airline).toUpperCase()] ?? String(ticket.airline)
+        : undefined
+      setPassengers((current) =>
+        current.map((passengerRow, rowIndex) =>
+          rowIndex === passengerIndex
+            ? {
+                ...passengerRow,
+                passengerName: value(invoice?.passengerName ?? passenger?.name) ?? passengerRow.passengerName,
+                ticketNo: value(invoice?.ticketNo ?? ticket?.number) ?? passengerRow.ticketNo,
+                pnr: value(invoice?.pnr ?? imported?.extractedData?.bookingReference) ?? passengerRow.pnr,
+                route:
+                  value(invoice?.route) ??
+                  (itinerary?.origin && itinerary?.destination
+                    ? `${itinerary.origin}-${itinerary.destination}`
+                    : undefined) ??
+                  passengerRow.route,
+              }
+            : passengerRow,
+        ),
+      )
+      setIurMessage(`Loaded extracted data from ${imported.fileName}. Missing values were left unchanged.`)
+      setFormValue('airline', airline)
+      setFormValue(
+        'route',
+        value(invoice?.route) ??
+          (itinerary?.origin && itinerary?.destination ? `${itinerary.origin}-${itinerary.destination}` : undefined),
+      )
+      setFormValue('pnr', value(invoice?.pnr ?? imported?.extractedData?.bookingReference))
+      if (invoice?.extraFee !== null && invoice?.extraFee !== undefined) setExtraFee(Number(invoice.extraFee) || 0)
+      if (invoice?.discount !== null && invoice?.discount !== undefined) setDiscount(Number(invoice.discount) || 0)
+    } catch (error) {
+      setIurMessage(error instanceof Error ? error.message : 'Unable to load IUR data')
+    } finally {
+      setLoadingIur(false)
+    }
+  }
 
   const toStringValue = (value: FormDataEntryValue | null) => {
     if (value === null) {
@@ -131,8 +197,9 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
       <IurSuggestionStatus error={iur.error} />
+      {iurMessage && <p className="text-xs text-slate-500" role="status">{loadingIur ? 'Loading IUR data...' : iurMessage}</p>}
       <IurSuggestionOptions id={iur.listId('passengerName')} values={iur.values('passengerName')} />
       <IurSuggestionOptions id={iur.listId('ticketNo')} values={iur.values('ticketNo')} />
       <IurSuggestionOptions id={iur.listId('pnr')} values={iur.values('pnr')} />
@@ -232,11 +299,18 @@ const ReIssueInvoiceForm = ({ employeesList, clientsList }: ReIssueInvoiceFormPr
                     value={passenger[field]}
                     required
                     onChange={(event) =>
-                      setPassengers(
-                        passengers.map((row, rowIndex) =>
-                          rowIndex === index ? { ...row, [field]: event.target.value } : row,
-                        ),
-                      )
+                      field === 'ticketNo'
+                        ? (setPassengers(
+                            passengers.map((row, rowIndex) =>
+                              rowIndex === index ? { ...row, [field]: event.target.value } : row,
+                            ),
+                          ),
+                          void loadIurForTicket(event.target.value, index))
+                        : setPassengers(
+                            passengers.map((row, rowIndex) =>
+                              rowIndex === index ? { ...row, [field]: event.target.value } : row,
+                            ),
+                          )
                     }
                     className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
                   />
