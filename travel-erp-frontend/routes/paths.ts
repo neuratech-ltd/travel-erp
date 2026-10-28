@@ -12,6 +12,7 @@ export const paths = {
   clients: `${rootPath.root}clients`,
   hotelVisaInvoice: `${rootPath.root}hotel-visa-invoice`,
   invoiceLedger: `${rootPath.root}invoice-ledger`,
+  iurImports: `${rootPath.root}iur-imports`,
   nonCommissionInvoice: `${rootPath.root}non-commission-invoice`,
   reissueInvoice: `${rootPath.root}reissue-invoice`,
   salesReport: `${rootPath.root}sales-report`,

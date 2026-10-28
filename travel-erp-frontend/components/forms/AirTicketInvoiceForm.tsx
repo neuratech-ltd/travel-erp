@@ -144,100 +144,118 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
   const loadIurForTicket = async (ticketNumber: string, passengerIndex: number) => {
     if (ticketNumber.replace(/[\s-]/g, '').length < 10) return
 
-      setLoadingIur(true)
-      setIurMessage('')
+    setLoadingIur(true)
+    setIurMessage('')
 
-      try {
-        const { data: imported } = await api.get(`/iur/imports/by-ticket/${encodeURIComponent(ticketNumber.trim())}`)
-        const invoice = imported?.extractedData?.invoice
-        const passenger = imported?.extractedData?.passenger
-        const ticket = imported?.extractedData?.ticket
-        const itinerary = imported?.extractedData?.itinerary?.[0]
+    try {
+      const { data: imported } = await api.get(`/iur/imports/by-ticket/${encodeURIComponent(ticketNumber.trim())}`)
+      const invoice = imported?.extractedData?.invoice
+      const passenger = imported?.extractedData?.passenger
+      const ticket = imported?.extractedData?.ticket
+      const itinerary = imported?.extractedData?.itinerary?.[0]
 
-        if (!invoice && !passenger && !ticket) throw new Error('No extracted IUR data is available')
+      if (!invoice && !passenger && !ticket) throw new Error('No extracted IUR data is available')
 
-        const value = (candidate: unknown) =>
-          candidate === null || candidate === undefined || candidate === '' ? undefined : candidate
-        const dateValue = (candidate: unknown) => {
-          if (typeof candidate !== 'string') return undefined
-          const isoDate = candidate.match(/^\d{4}-\d{2}-\d{2}$/)
-          if (isoDate) return candidate
+      const value = (candidate: unknown) =>
+        candidate === null || candidate === undefined || candidate === '' ? undefined : candidate
+      const dateValue = (candidate: unknown) => {
+        if (typeof candidate !== 'string') return undefined
+        const isoDate = candidate.match(/^\d{4}-\d{2}-\d{2}$/)
+        if (isoDate) return candidate
 
-          const compactDate = candidate.match(/^(\d{2})([A-Z]{3})(\d{2,4})$/i)
-          if (!compactDate) return candidate
+        const compactDate = candidate.match(/^(\d{2})([A-Z]{3})(\d{2,4})$/i)
+        if (!compactDate) return candidate
 
-          const months: Record<string, string> = {
-            JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06',
-            JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12',
-          }
-          const year = compactDate[3].length === 2 ? `20${compactDate[3]}` : compactDate[3]
-          const month = months[compactDate[2].toUpperCase()]
-          return month ? `${year}-${month}-${compactDate[1]}` : candidate
+        const months: Record<string, string> = {
+          JAN: '01',
+          FEB: '02',
+          MAR: '03',
+          APR: '04',
+          MAY: '05',
+          JUN: '06',
+          JUL: '07',
+          AUG: '08',
+          SEP: '09',
+          OCT: '10',
+          NOV: '11',
+          DEC: '12',
         }
-        const classValue = (candidate: unknown) => {
-          if (typeof candidate !== 'string') return undefined
-          const classes: Record<string, string> = {
-            Y: 'Economy', W: 'Premium Economy', J: 'Business', C: 'Business', D: 'Business', F: 'First Class',
-          }
-          return classes[candidate.toUpperCase()] ?? (
-            ['Economy', 'Premium Economy', 'Business', 'First Class'].includes(candidate)
-              ? candidate
-              : undefined
-          )
-        }
-
-        const fieldsToSet: Array<[keyof PassengerRow, unknown]> = [
-          ['ticketNo', value(invoice?.ticketNo ?? ticket?.number)],
-          ['pnr', value(invoice?.pnr ?? imported?.extractedData?.bookingReference)],
-          ['route', value(invoice?.route)],
-          ['ticketClass', classValue(invoice?.class ?? itinerary?.bookingClass)],
-          ['baseFare', value(invoice?.baseFare ?? ticket?.baseAmount)],
-          ['taxesCommission', value(invoice?.taxesCommission)],
-          ['aitTax', value(invoice?.aitTax)],
-          ['clientPrice', value(invoice?.clientPrice)],
-          ['commissionPct', value(invoice?.commission)],
-          ['discountGiven', value(invoice?.discount)],
-          ['extraFee', value(invoice?.extraFee)],
-          ['passengerName', value(invoice?.passengerName ?? passenger?.name)],
-          ['passengerType', value(invoice?.passengerType)],
-          ['passportNo', value(invoice?.passportNo)],
-          ['contactNo', value(invoice?.contactNo)],
-          ['passengerEmail', value(invoice?.passengerEmail)],
-          ['dateOfBirth', dateValue(invoice?.dateOfBirth)],
-          ['passportIssueDate', dateValue(invoice?.passportIssueDate)],
-          ['passportExpiryDate', dateValue(invoice?.passportExpiryDate)],
-          ['journeyDate', dateValue(invoice?.journeyDate ?? itinerary?.date)],
-          ['returnDate', dateValue(invoice?.returnDate)],
-          ['travelSegment', value(invoice?.travelSegment)],
-          ['ticketingRemarks', value(invoice?.ticketingRemarks)],
-        ]
-
-        for (const [field, fieldValue] of fieldsToSet) {
-          if (fieldValue !== undefined) {
-            setValue(`passengers.${passengerIndex}.${field}`, fieldValue as never, { shouldDirty: true })
-          }
-        }
-
-        if (ticket?.airline) {
-          const airlineNames: Record<string, string> = {
-            BG: 'US-Bangla Airlines',
-            EK: 'Emirates',
-            QR: 'Qatar Airways',
-            SQ: 'Singapore Airlines',
-            TK: 'Turkish Airlines',
-          }
-          const airline = airlineNames[ticket.airline] ?? ticket.airline
-          if (['Emirates', 'Qatar Airways', 'Singapore Airlines', 'Turkish Airlines', 'US-Bangla Airlines'].includes(airline)) {
-            setValue('airline', airline, { shouldDirty: true })
-          }
-        }
-
-        setIurMessage(`Loaded extracted data from ${imported.fileName}. Missing values were left unchanged.`)
-      } catch (error) {
-        setIurMessage(error instanceof Error ? error.message : 'Unable to load IUR data')
-      } finally {
-        setLoadingIur(false)
+        const year = compactDate[3].length === 2 ? `20${compactDate[3]}` : compactDate[3]
+        const month = months[compactDate[2].toUpperCase()]
+        return month ? `${year}-${month}-${compactDate[1]}` : candidate
       }
+      const classValue = (candidate: unknown) => {
+        if (typeof candidate !== 'string') return undefined
+        const classes: Record<string, string> = {
+          Y: 'Economy',
+          W: 'Premium Economy',
+          J: 'Business',
+          C: 'Business',
+          D: 'Business',
+          F: 'First Class',
+        }
+        return (
+          classes[candidate.toUpperCase()] ??
+          (['Economy', 'Premium Economy', 'Business', 'First Class'].includes(candidate) ? candidate : undefined)
+        )
+      }
+
+      const fieldsToSet: Array<[keyof PassengerRow, unknown]> = [
+        ['ticketNo', value(invoice?.ticketNo ?? ticket?.number)],
+        ['pnr', value(invoice?.pnr ?? imported?.extractedData?.bookingReference)],
+        ['route', value(invoice?.route)],
+        ['ticketClass', classValue(invoice?.class ?? itinerary?.bookingClass)],
+        ['baseFare', value(invoice?.baseFare ?? ticket?.baseAmount)],
+        ['taxesCommission', value(invoice?.taxesCommission)],
+        ['aitTax', value(invoice?.aitTax)],
+        ['clientPrice', value(invoice?.clientPrice)],
+        ['commissionPct', value(invoice?.commission)],
+        ['discountGiven', value(invoice?.discount)],
+        ['extraFee', value(invoice?.extraFee)],
+        ['passengerName', value(invoice?.passengerName ?? passenger?.name)],
+        ['passengerType', value(invoice?.passengerType)],
+        ['passportNo', value(invoice?.passportNo)],
+        ['contactNo', value(invoice?.contactNo)],
+        ['passengerEmail', value(invoice?.passengerEmail)],
+        ['dateOfBirth', dateValue(invoice?.dateOfBirth)],
+        ['passportIssueDate', dateValue(invoice?.passportIssueDate)],
+        ['passportExpiryDate', dateValue(invoice?.passportExpiryDate)],
+        ['journeyDate', dateValue(invoice?.journeyDate ?? itinerary?.date)],
+        ['returnDate', dateValue(invoice?.returnDate)],
+        ['travelSegment', value(invoice?.travelSegment)],
+        ['ticketingRemarks', value(invoice?.ticketingRemarks)],
+      ]
+
+      for (const [field, fieldValue] of fieldsToSet) {
+        if (fieldValue !== undefined) {
+          setValue(`passengers.${passengerIndex}.${field}`, fieldValue as never, { shouldDirty: true })
+        }
+      }
+
+      if (ticket?.airline) {
+        const airlineNames: Record<string, string> = {
+          BG: 'US-Bangla Airlines',
+          EK: 'Emirates',
+          QR: 'Qatar Airways',
+          SQ: 'Singapore Airlines',
+          TK: 'Turkish Airlines',
+        }
+        const airline = airlineNames[ticket.airline] ?? ticket.airline
+        if (
+          ['Emirates', 'Qatar Airways', 'Singapore Airlines', 'Turkish Airlines', 'US-Bangla Airlines'].includes(
+            airline,
+          )
+        ) {
+          setValue('airline', airline, { shouldDirty: true })
+        }
+      }
+
+      setIurMessage(`Loaded extracted data from ${imported.fileName}. Missing values were left unchanged.`)
+    } catch (error) {
+      setIurMessage(error instanceof Error ? error.message : 'Unable to load IUR data')
+    } finally {
+      setLoadingIur(false)
+    }
   }
 
   const createInvoice = async (invoiceData: any) => {
@@ -309,7 +327,11 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
   return (
     <form onSubmit={handleSubmit(onSubmit)} id="ticket-invoice-form" className="space-y-6">
       <IurSuggestionStatus error={iur.error} />
-      {iurMessage && <p className="text-xs text-slate-500" role="status">{iurMessage}</p>}
+      {iurMessage && (
+        <p className="text-xs text-slate-500" role="status">
+          {iurMessage}
+        </p>
+      )}
       <IurSuggestionOptions id={iur.listId('ticketNo')} values={iur.values('ticketNo')} />
       <IurSuggestionOptions id={iur.listId('pnr')} values={iur.values('pnr')} />
       <IurSuggestionOptions id={iur.listId('route')} values={iur.values('route')} />
@@ -401,6 +423,8 @@ const AirTicketInvoiceForm = ({ employeesList, clientsList }: AirTicketInvoiceFo
             {...register('airline', { required: true })}
             className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 focus:bg-white text-slate-800 outline-none"
           >
+            <option value="">Select Airline</option>
+            <option>Bangladesh Biman Airlines</option>
             <option>Emirates</option>
             <option>Qatar Airways</option>
             <option>Singapore Airlines</option>

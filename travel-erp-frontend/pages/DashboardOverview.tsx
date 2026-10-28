@@ -3,7 +3,6 @@ import { Activity, Award, Clock, HeartPulse, TrendingUp, UserCheck } from 'lucid
 import { Invoice } from '../types'
 import ReportCard from '../components/dashboard/ReportCard'
 import { api } from '../lib/api'
-import IurImports from '../components/iur/IurImports'
 
 type DashboardRow = {
   id: string
@@ -170,8 +169,6 @@ export default function DashboardOverview() {
           <Summary label="Total Outstanding" value={unpaidIssues + unpaidReissues} />
         </div>
       </section>
-      <IurImports />
-
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <SimpleTable
           title="Client Sales"

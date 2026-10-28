@@ -26,6 +26,7 @@ const TAB_TITLES: { path: string; title: string }[] = [
   { path: paths.tourPackageInvoice, title: 'Holiday & Medical Package Builder' },
   { path: paths.hotelVisaInvoice, title: 'Hotel Bookings & Visa Desk' },
   { path: paths.invoiceLedger, title: 'Financial Ledger Accounts & Receipts' },
+  { path: paths.iurImports, title: 'Sabre IUR Import Manager' },
   { path: paths.salesReport, title: 'Welcare Trip Monthly Sales Worksheet' },
   { path: paths.employees, title: 'Employee Directory & ERP Access Roles' },
   { path: paths.aiConsultant, title: 'AI Travel & Medical Intelligence Consultant' },

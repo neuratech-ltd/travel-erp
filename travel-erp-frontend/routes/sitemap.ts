@@ -7,6 +7,7 @@ import {
   Hotel,
   FileText,
   FileSpreadsheet,
+  Database,
   Sparkles,
   User,
 } from 'lucide-react'
@@ -34,6 +35,7 @@ export const siteMap = [
   },
   { id: 'hotel-visa', label: 'Hotel & Visa', icon: Hotel, section: 'Packages', path: paths.hotelVisaInvoice },
   { id: 'ledger', label: 'Invoice Ledger', icon: FileText, section: 'Financials', path: paths.invoiceLedger },
+  { id: 'iur-imports', label: 'IUR Imports', icon: Database, section: 'Core', path: paths.iurImports },
   {
     id: 'sales-report',
     label: 'Sales Spreadsheet',
