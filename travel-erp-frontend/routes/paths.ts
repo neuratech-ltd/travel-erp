@@ -4,13 +4,15 @@ export const rootPath = {
 
 export const paths = {
   root: rootPath.root,
-  dashboard: rootPath.root,
+  login: `${rootPath.root}login`,
+  dashboard: `${rootPath.root}`,
   aiConsultant: `${rootPath.root}ai-consultant`,
   airTicketInvoice: `${rootPath.root}air-ticket-invoice`,
   employees: `${rootPath.root}employees`,
   clients: `${rootPath.root}clients`,
   hotelVisaInvoice: `${rootPath.root}hotel-visa-invoice`,
   invoiceLedger: `${rootPath.root}invoice-ledger`,
+  iurImports: `${rootPath.root}iur-imports`,
   nonCommissionInvoice: `${rootPath.root}non-commission-invoice`,
   reissueInvoice: `${rootPath.root}reissue-invoice`,
   salesReport: `${rootPath.root}sales-report`,

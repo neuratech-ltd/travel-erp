@@ -1,6 +1,15 @@
 import React from 'react'
-import { User, Plane, HeartPulse, Hotel, ShieldCheck } from 'lucide-react'
-import { Accommodation, Billing, InvoiceContact, MedicalInfo, PassportInfo, TicketInfo, VisaInfo } from '../../types'
+import { User, Plane, HeartPulse, Hotel, ShieldCheck, Users } from 'lucide-react'
+import {
+  Accommodation,
+  Billing,
+  InvoiceContact,
+  MedicalInfo,
+  Passenger,
+  PassportInfo,
+  TicketInfo,
+  VisaInfo,
+} from '../../types'
 
 interface ExpandedDetailsProps {
   inv: {
@@ -12,10 +21,10 @@ interface ExpandedDetailsProps {
       receivedDate: string
       remarks?: string
     }[]
-    paxName?: string
-    passportNo?: string
+    passengers?: Passenger[]
     passportInfo?: PassportInfo
     client?: InvoiceContact
+    reference?: InvoiceContact
     ticketInfo?: TicketInfo
     medicalInfo?: MedicalInfo
     visaInfo?: VisaInfo
@@ -25,6 +34,8 @@ interface ExpandedDetailsProps {
 }
 
 const ExpandedDetails = ({ inv }: ExpandedDetailsProps) => {
+  const passengers = inv.passengers ?? []
+
   return (
     <tr className="bg-slate-50/60">
       <td colSpan={9} className="p-6 border-t border-b border-slate-200/50">
@@ -32,21 +43,17 @@ const ExpandedDetails = ({ inv }: ExpandedDetailsProps) => {
           <div className="space-y-4">
             <h4 className="font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
               <User className="h-4 w-4 text-emerald-500" />
-              Primary Customer & Passport File
+              Client File
             </h4>
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-2">
               <div>
-                <span className="text-slate-400 block font-medium">Full Passenger Name:</span>{' '}
-                <span className="font-bold text-slate-800">{inv.paxName}</span>
+                <span className="text-slate-400 block font-medium">Client Name:</span>{' '}
+                <span className="font-bold text-slate-800">{inv.client?.name || 'Walk-In Customer'}</span>
               </div>
               <div>
-                <span className="text-slate-400 block font-medium">Passport Number:</span>{' '}
-                <span className="font-semibold text-slate-800 font-mono uppercase">{inv.passportNo || 'N/A'}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block font-medium">National Identity (NID):</span>{' '}
-                <span className="text-slate-700">{inv.passportInfo?.nationalId || 'N/A'}</span>
+                <span className="text-slate-400 block font-medium">Reference By:</span>{' '}
+                <span className="font-semibold text-slate-800">{inv.reference?.name || 'N/A'}</span>
               </div>
               <div>
                 <span className="text-slate-400 block font-medium">Address:</span>{' '}
@@ -56,44 +63,72 @@ const ExpandedDetails = ({ inv }: ExpandedDetailsProps) => {
                 <span className="text-slate-400 block font-medium">Contact Phone No:</span>{' '}
                 <span className="text-slate-700">{inv.client?.phone || 'N/A'}</span>
               </div>
-              <div>
+              <div className="col-span-2">
                 <span className="text-slate-400 block font-medium">Email Address:</span>{' '}
                 <span className="text-slate-700">{inv.client?.email || 'N/A'}</span>
               </div>
             </div>
 
-            {inv.ticketInfo && inv.ticketInfo.ticketNo && (
-              <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
+            {passengers.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
                 <h4 className="font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 pb-1">
-                  <Plane className="h-4 w-4 text-emerald-500" />
-                  IATA Air Ticket segment
+                  <Users className="h-4 w-4 text-emerald-500" />
+                  Passengers ({passengers.length})
                 </h4>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                  <div>
-                    <span className="text-slate-400 block font-medium">Airline / GDS:</span>{' '}
-                    <span className="text-slate-800 font-semibold">{inv.ticketInfo.airline}</span>
+
+                {passengers.map((pax, idx) => (
+                  <div key={idx} className="bg-slate-50 rounded-xl border border-slate-100 p-3 space-y-2">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                      <div>
+                        <span className="text-slate-400 block font-medium">Passenger Name:</span>{' '}
+                        <span className="font-bold text-slate-800">{pax.paxName}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-medium">Passport Number:</span>{' '}
+                        <span className="font-semibold text-slate-800 font-mono uppercase">
+                          {pax.passportNo || 'N/A'}
+                        </span>
+                      </div>
+                      {pax.pnr && (
+                        <div>
+                          <span className="text-slate-400 block font-medium">PNR:</span>{' '}
+                          <span className="text-slate-800 font-mono font-bold uppercase">{pax.pnr}</span>
+                        </div>
+                      )}
+                      {pax.ticketNo && (
+                        <div>
+                          <span className="text-slate-400 block font-medium">Ticket No:</span>{' '}
+                          <span className="text-slate-800 font-mono font-medium">{pax.ticketNo}</span>
+                        </div>
+                      )}
+                      {pax.route && (
+                        <div>
+                          <span className="text-slate-400 block font-medium">Route / Sector:</span>{' '}
+                          <span className="text-slate-800 font-bold font-mono text-xs">{pax.route}</span>
+                        </div>
+                      )}
+                      {pax.journeyDate && (
+                        <div>
+                          <span className="text-slate-400 block font-medium">Journey Date:</span>{' '}
+                          <span className="text-slate-700">{pax.journeyDate}</span>
+                        </div>
+                      )}
+                      {pax.returnDate && (
+                        <div>
+                          <span className="text-slate-400 block font-medium">Return Date:</span>{' '}
+                          <span className="text-slate-700">{pax.returnDate}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex justify-between border-t border-dashed border-slate-200 pt-1.5 text-2xs font-semibold">
+                      <span className="text-slate-500">
+                        Base ৳{(pax.baseFare ?? 0).toLocaleString()} · AIT ৳{(pax.aitTax ?? 0).toLocaleString()}
+                      </span>
+                      <span className="text-emerald-600 font-bold">Profit ৳{(pax.profit ?? 0).toLocaleString()}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-slate-400 block font-medium">Flight PNR Code:</span>{' '}
-                    <span className="text-slate-800 font-mono font-bold uppercase">{inv.ticketInfo.pnr}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block font-medium">Ticket E-No:</span>{' '}
-                    <span className="text-slate-800 font-mono font-medium">{inv.ticketInfo.ticketNo}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block font-medium">Sectors:</span>{' '}
-                    <span className="text-slate-800 font-bold font-mono text-xs">{inv.ticketInfo.route}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block font-medium">Journey Date:</span>{' '}
-                    <span className="text-slate-700">{inv.ticketInfo.journeyDate}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block font-medium">Return Date:</span>{' '}
-                    <span className="text-slate-700">{inv.ticketInfo.returnDate || 'N/A'}</span>
-                  </div>
-                </div>
+                ))}
               </div>
             )}
           </div>

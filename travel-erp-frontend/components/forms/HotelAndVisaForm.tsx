@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { ShieldAlert, Hotel, Ship } from 'lucide-react'
+import { ShieldAlert, Hotel, Ship, Plus, Trash2 } from 'lucide-react'
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from '../ui/combobox'
 import SuccessPopup from '../common/SuccessPopup'
 import { api } from '../../lib/api'
@@ -17,17 +17,27 @@ const HotelAndVisaForm = ({ bookingType, loading, employeesList, clientsList }: 
   const [hotelSale, setHotelSale] = useState(0)
   const [visaCost, setVisaCost] = useState(0)
   const [visaSale, setVisaSale] = useState(0)
+  const [customerCount, setCustomerCount] = useState(1)
+  const [services, setServices] = useState([{ name: '', costPrice: 0, salePrice: 0 }])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successOpen, setSuccessOpen] = useState(false)
   const [successDetail, setSuccessDetail] = useState('')
 
   const currentPurchasePrice = useMemo(() => {
-    return bookingType === 'Hotel' ? hotelCost * Math.max(1, hotelNights) : visaCost
-  }, [bookingType, hotelCost, hotelNights, visaCost])
+    return bookingType === 'Hotel'
+      ? (services.reduce((sum, service) => sum + service.costPrice, 0) || hotelCost) *
+          Math.max(1, hotelNights) *
+          customerCount
+      : visaCost
+  }, [bookingType, customerCount, hotelCost, hotelNights, services, visaCost])
 
   const currentClientPrice = useMemo(() => {
-    return bookingType === 'Hotel' ? hotelSale * Math.max(1, hotelNights) : visaSale
-  }, [bookingType, hotelSale, hotelNights, visaSale])
+    return bookingType === 'Hotel'
+      ? (services.reduce((sum, service) => sum + service.salePrice, 0) || hotelSale) *
+          Math.max(1, hotelNights) *
+          customerCount
+      : visaSale
+  }, [bookingType, customerCount, hotelNights, hotelSale, services, visaSale])
 
   const currentProfit = useMemo(
     () => currentClientPrice - currentPurchasePrice,
@@ -69,8 +79,7 @@ const HotelAndVisaForm = ({ bookingType, loading, employeesList, clientsList }: 
     const invoiceData = {
       bookingType,
       clientName: toStringValue(formData.get('clientName')),
-      salesBy: toStringValue(formData.get('salesBy')),
-      invoiceNumber: toStringValue(formData.get('invoiceNo')),
+      reference: toStringValue(formData.get('reference')),
       salesDate: toStringValue(formData.get('salesDate')),
       dueDate: toStringValue(formData.get('dueDate')),
       paxName: toStringValue(formData.get('paxName')),
@@ -84,6 +93,8 @@ const HotelAndVisaForm = ({ bookingType, loading, employeesList, clientsList }: 
       nights: bookingType === 'Hotel' ? hotelNights : undefined,
       hotelCost,
       hotelSale,
+      customerCount: bookingType === 'Hotel' ? customerCount : undefined,
+      services: bookingType === 'Hotel' ? services : undefined,
       visaCountry: toStringValue(formData.get('visaCountry')),
       visaNo: toStringValue(formData.get('visaNo')),
       visaCost,
@@ -93,7 +104,7 @@ const HotelAndVisaForm = ({ bookingType, loading, employeesList, clientsList }: 
     try {
       const result = await createInvoice(invoiceData)
       setSuccessDetail(
-        `Invoice ${result.data?.invoiceNo || invoiceData.invoiceNumber} saved with ৳${currentClientPrice.toFixed(2)} revenue.`,
+        `Invoice ${result.data?.invoiceNo || 'number generated'} saved with ৳${currentClientPrice.toFixed(2)} revenue.`,
       )
       setSuccessOpen(true)
       event.currentTarget.reset()
@@ -102,6 +113,8 @@ const HotelAndVisaForm = ({ bookingType, loading, employeesList, clientsList }: 
       setHotelSale(0)
       setVisaCost(0)
       setVisaSale(0)
+      setCustomerCount(1)
+      setServices([{ name: '', costPrice: 0, salePrice: 0 }])
     } catch (error) {
       console.error('Error creating invoice:', error)
     } finally {
@@ -139,25 +152,17 @@ const HotelAndVisaForm = ({ bookingType, loading, employeesList, clientsList }: 
         <div>
           <label className="block text-slate-500 font-bold mb-1">Sales By</label>
           <select
-            name="salesBy"
+            name="reference"
+            required
             className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
           >
-            <option value="Select Employee">Select Employee</option>
+            <option value="">Select Employee</option>
             {employeesList.map((employee) => (
               <option key={employee.id} value={employee.name}>
                 {employee.name}
               </option>
             ))}
           </select>
-        </div>
-        <div>
-          <label className="block text-slate-500 font-bold mb-1">Invoice Voucher ID *</label>
-          <input
-            name="invoiceNo"
-            type="text"
-            className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 font-bold outline-none"
-            required
-          />
         </div>
         <div className="flex items-end pb-1.5">
           <span className="text-3xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-2.5 rounded-lg w-full flex items-center justify-center gap-1">
@@ -176,22 +181,103 @@ const HotelAndVisaForm = ({ bookingType, loading, employeesList, clientsList }: 
         <input type="hidden" name="bookingType" value={bookingType} />
 
         {bookingType === 'Hotel' ? (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs animate-fade-in">
-            <div>
-              <label className="block text-slate-500 font-bold mb-1">Hotel Name</label>
-              <input
-                type="text"
-                name="hotelName"
-                className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
-              />
+          <div className="space-y-4 text-xs animate-fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Customer Number</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={customerCount}
+                  onChange={(e) => setCustomerCount(Math.max(1, Number(e.target.value) || 1))}
+                  className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none font-bold"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Hotel Name</label>
+                <input
+                  type="text"
+                  name="hotelName"
+                  className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Room Type</label>
+                <input
+                  type="text"
+                  name="roomType"
+                  className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-slate-500 font-bold mb-1">Room Type</label>
-              <input
-                type="text"
-                name="roomType"
-                className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50 text-slate-800 outline-none"
-              />
+            <div className="space-y-2 border-t border-slate-100 pt-4">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-700">Hotel Services</span>
+                <button
+                  type="button"
+                  onClick={() => setServices([...services, { name: '', costPrice: 0, salePrice: 0 }])}
+                  className="flex items-center gap-1 text-blue-600 font-bold"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add service
+                </button>
+              </div>
+              {services.map((service, index) => (
+                <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                  <div>
+                    <label className="block text-slate-500 font-bold mb-1">Service</label>
+                    <input
+                      value={service.name}
+                      onChange={(e) =>
+                        setServices(
+                          services.map((row, rowIndex) =>
+                            rowIndex === index ? { ...row, name: e.target.value } : row,
+                          ),
+                        )
+                      }
+                      className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-500 font-bold mb-1">Buy Price / Customer</label>
+                    <input
+                      type="number"
+                      value={service.costPrice}
+                      onChange={(e) =>
+                        setServices(
+                          services.map((row, rowIndex) =>
+                            rowIndex === index ? { ...row, costPrice: Number(e.target.value) || 0 } : row,
+                          ),
+                        )
+                      }
+                      className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-500 font-bold mb-1">Sell Price / Customer</label>
+                    <input
+                      type="number"
+                      value={service.salePrice}
+                      onChange={(e) =>
+                        setServices(
+                          services.map((row, rowIndex) =>
+                            rowIndex === index ? { ...row, salePrice: Number(e.target.value) || 0 } : row,
+                          ),
+                        )
+                      }
+                      className="w-full border border-slate-200 rounded-lg p-2 bg-slate-50"
+                    />
+                  </div>
+                  {services.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setServices(services.filter((_, rowIndex) => rowIndex !== index))}
+                      className="text-red-500 pb-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
             <div>
               <label className="block text-slate-500 font-bold mb-1">Staying Nights</label>
@@ -272,7 +358,7 @@ const HotelAndVisaForm = ({ bookingType, loading, employeesList, clientsList }: 
             <span className="text-sm font-black text-slate-700">৳{currentClientPrice.toFixed(2)}</span>
           </div>
           <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl">
-            <span className="block text-4xs font-bold text-blue-500 uppercase font-medium">Net Profit Margin</span>
+            <span className="block text-4xs font-bold text-blue-500 uppercase">Net Profit Margin</span>
             <span className="text-sm font-black text-blue-700">৳{currentProfit.toFixed(2)}</span>
           </div>
         </div>
