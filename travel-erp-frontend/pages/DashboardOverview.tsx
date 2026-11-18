@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Activity, Award, Clock, HeartPulse, TrendingUp, UserCheck } from 'lucide-react'
 import { Invoice } from '../types'
 import ReportCard from '../components/dashboard/ReportCard'
+import RhcMeter from '../components/dashboard/RhcMeter'
 import { api } from '../lib/api'
 
 type DashboardRow = {
@@ -17,6 +18,33 @@ type DashboardInvoice = Invoice & {
   vendor?: { name?: string; iataCode?: string }
   client?: { name?: string }
   billing?: { netTotal?: number; totalCost?: number; totalProfit?: number; discount?: number; extraFee?: number }
+}
+
+type IurImport = {
+  id: string
+  extractedData?: {
+    invoice?: {
+      clientPrice?: number | null
+      baseFare?: number | null
+    }
+    ticket?: {
+      baseAmount?: number | null
+    }
+  } | null
+}
+
+type IurImportsResponse = {
+  items: IurImport[]
+  pagination: {
+    total: number
+    totalPages: number
+  }
+}
+
+type IurMeterCache = {
+  usage: number
+  dataKey: string
+  lastUpdated: string
 }
 
 type Metrics = {
@@ -37,6 +65,8 @@ const invoiceProfit = (invoice?: DashboardInvoice) =>
   invoice?.totalProfit ?? invoice?.billing?.totalProfit ?? invoiceSale(invoice) - invoiceCost(invoice)
 const invoiceDiscount = (invoice?: DashboardInvoice) => invoice?.totalDiscount ?? invoice?.billing?.discount ?? 0
 const invoiceServiceCharge = (invoice?: DashboardInvoice) => invoice?.totalExtraFee ?? invoice?.billing?.extraFee ?? 0
+const RHC_CAPACITY = 10_000_000
+const IUR_METER_CACHE_KEY = 'dashboard-iur-meter'
 
 const emptyMetrics = (): Metrics => ({
   sales: 0,
@@ -48,21 +78,99 @@ const emptyMetrics = (): Metrics => ({
   profit: 0,
 })
 
+function readIurMeterCache(): IurMeterCache | null {
+  try {
+    const cached = window.localStorage.getItem(IUR_METER_CACHE_KEY)
+    if (!cached) return null
+
+    const parsed = JSON.parse(cached) as Partial<IurMeterCache>
+    if (
+      typeof parsed.usage !== 'number' ||
+      typeof parsed.dataKey !== 'string' ||
+      typeof parsed.lastUpdated !== 'string'
+    ) {
+      return null
+    }
+
+    return parsed as IurMeterCache
+  } catch {
+    return null
+  }
+}
+
+function writeIurMeterCache(cache: IurMeterCache) {
+  try {
+    window.localStorage.setItem(IUR_METER_CACHE_KEY, JSON.stringify(cache))
+  } catch {
+    // The meter still works when browser storage is unavailable.
+  }
+}
+
 export default function DashboardOverview() {
   const [rows, setRows] = useState<DashboardRow[]>([])
   const [invoices, setInvoices] = useState<DashboardInvoice[]>([])
+  const [iurMeter, setIurMeter] = useState(() => {
+    const cached = readIurMeterCache()
+    return {
+      usage: cached?.usage ?? 0,
+      lastUpdated: cached ? new Date(cached.lastUpdated) : null,
+    }
+  })
   const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [dashboardError, setDashboardError] = useState('')
+
+  const loadDashboardData = useCallback(async () => {
+    setDashboardError('')
+    try {
+      const [salesResponse, invoiceResponse, iurResponse] = await Promise.all([
+        api.get('/sales-reports'),
+        api.get('/invoices'),
+        api.get<IurImportsResponse>('/iur/imports?page=1&limit=100'),
+      ])
+      if (salesResponse.data.success) setRows(salesResponse.data.data)
+      const invoiceData = invoiceResponse.data
+      setInvoices(invoiceData.success ? invoiceData.data : Array.isArray(invoiceData) ? invoiceData : [])
+      const firstIurPage = iurResponse.data
+      const remainingPages = await Promise.all(
+        Array.from({ length: Math.max(firstIurPage.pagination.totalPages - 1, 0) }, (_, index) =>
+          api.get<IurImportsResponse>(`/iur/imports?page=${index + 2}&limit=100`),
+        ),
+      )
+      const iurPages = [firstIurPage, ...remainingPages.map((response) => response.data)]
+      const imports = iurPages.flatMap((page) => page.items)
+      const latestImport = imports[0]
+      const dataKey = `${firstIurPage.pagination.total}:${latestImport?.id ?? 'empty'}`
+      const usage = imports.reduce((sum, item) => {
+        const invoice = item.extractedData?.invoice
+        const ticket = item.extractedData?.ticket
+        return sum + (invoice?.clientPrice ?? invoice?.baseFare ?? ticket?.baseAmount ?? 0)
+      }, 0)
+      const cached = readIurMeterCache()
+
+      if (!cached || cached.dataKey !== dataKey) {
+        const updatedAt = new Date()
+        setIurMeter({ usage, lastUpdated: updatedAt })
+        writeIurMeterCache({ usage, dataKey, lastUpdated: updatedAt.toISOString() })
+      }
+    } catch (error) {
+      console.error('Failed to load dashboard data', error)
+      setDashboardError('Could not update dashboard data. Please try again.')
+    }
+  }, [])
 
   useEffect(() => {
-    Promise.all([api.get('/sales-reports'), api.get('/invoices')])
-      .then(([salesResponse, invoiceResponse]) => {
-        if (salesResponse.data.success) setRows(salesResponse.data.data)
-        const invoiceData = invoiceResponse.data
-        setInvoices(invoiceData.success ? invoiceData.data : Array.isArray(invoiceData) ? invoiceData : [])
-      })
-      .catch((error) => console.error('Failed to load dashboard data', error))
-      .finally(() => setIsLoading(false))
-  }, [])
+    loadDashboardData().finally(() => setIsLoading(false))
+  }, [loadDashboardData])
+
+  const requestBalanceUpdate = async () => {
+    setIsRefreshing(true)
+    try {
+      await loadDashboardData()
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   const invoiceById = useMemo(() => new Map(invoices.map((invoice) => [invoice.id, invoice])), [invoices])
 
@@ -139,6 +247,15 @@ export default function DashboardOverview() {
   return (
     <div id="dashboard-overview-container" className="flex-1 p-8 overflow-y-auto space-y-6 bg-slate-50">
       {isLoading && <p className="text-sm text-slate-500">Loading dashboard...</p>}
+      {dashboardError && <p className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{dashboardError}</p>}
+
+      <RhcMeter
+        capacity={RHC_CAPACITY}
+        usage={iurMeter.usage}
+        lastUpdated={iurMeter.lastUpdated}
+        isRefreshing={isRefreshing}
+        onRequestUpdate={requestBalanceUpdate}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <ReportCard
